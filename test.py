@@ -11,6 +11,8 @@ TESTS = (
     ('trapl expr  x ( a  b  c ) y  z', 'x ( a b c ) y z'),
     ('trapl str new ( trapl expr a ( b c ) d ) rev', 'd ) c b ( a'),
     ('trapl with s abc  trapl eval ( trapl expr s rev )', 'cba'),
+    ('trapl with s abc  trapl with s Z  trapl eval ( trapl expr s )', 'abc'),
+    ('trapl with X s  trapl with X abc  trapl eval ( trapl expr s )', 'abc'),
 )
 
 if __name__ == '__main__':
