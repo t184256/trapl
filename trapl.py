@@ -19,7 +19,6 @@ class mydict(dict):
 BASE_OBJ = mydict()
 TRAPL = BASE_OBJ({
     'obj': BASE_OBJ,
-    'ign': BASE_OBJ(_call_=lambda x: x),
     'int': BASE_OBJ({
         '_val_': 0,
         'new': BASE_OBJ(_call_=lambda s: TRAPL['int'](_val_=int(s._val_))),
@@ -31,19 +30,20 @@ TRAPL = BASE_OBJ({
         )),
         'str': BASE_OBJ(_meth_=lambda a: TRAPL['str'](_val_=str(a._val_)))
     }),
-    'eval': BASE_OBJ(_call_=lambda code: BASE_OBJ(
-        _magic_='eval', _magic_code_=code,
-    )),
-    'code': BASE_OBJ(_magic_='code'),
-    'with': BASE_OBJ(_call_=lambda name: BASE_OBJ(_call_=lambda val: BASE_OBJ(
-        _magic_='with', _magic_name_=name._val_, _magic_value_=val,
-    ))),
     'str': BASE_OBJ({
         '_val_': '',
         'new': BASE_OBJ(_call_=lambda s: TRAPL['str'](_val_=s._val_)),
         'rev': BASE_OBJ(_meth_=lambda s: TRAPL['str'](_val_=s._val_[::-1])),
         'len': BASE_OBJ(_meth_=lambda s: TRAPL['int'](_val_=len(s._val_))),
     }),
+    'ign': BASE_OBJ(_call_=lambda x: x),
+    'code': BASE_OBJ(_magic_='code'),
+    'eval': BASE_OBJ(_call_=lambda code: BASE_OBJ(
+        _magic_='eval', _magic_code_=code,
+    )),
+    'with': BASE_OBJ(_call_=lambda name: BASE_OBJ(_call_=lambda val: BASE_OBJ(
+        _magic_='with', _magic_name_=name._val_, _magic_value_=val,
+    ))),
 })
 
 def parse(tokens):
