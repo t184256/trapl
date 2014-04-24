@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # Copyright (c) 2014 Alexander Sosedkin <monk@unboiled.info>, see LICENSE file
 
-from trapl import trapl_eval
+from trapl import trapl_eval, syntax_rich
 
 TESTS = (
     ('Hello_world!', 'Hello_world!'),
@@ -19,7 +19,11 @@ TESTS = (
     ('trapl with s abc  trapl with s Z  trapl eval ( trapl code s )', 'abc'),
     ('trapl with X s  trapl with X abc  trapl eval ( trapl code s )', 'abc'),
     ('trapl with hello ( trapl ext hello shorten hi )  hello shorten', 'hi'),
+    # Rich syntax examples
+    ('@hello (trapl ext hello shorten hi)  hello shorten', 'hi'),
+    ('@x abc  @x 100500  @x xoth  x', 'abc'),
 )
 
 if __name__ == '__main__':
-    for code, result in TESTS: assert trapl_eval(code) == result
+    for code, result in TESTS:
+        assert trapl_eval(code, syntax=syntax_rich) == result

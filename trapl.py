@@ -90,6 +90,12 @@ def _trapl_eval(tree, context=None):
                 curr = TRAPL['str'](_val_=flatten(to_the_end))
     return curr or BASE_OBJ
 
-def trapl_eval(code): return _trapl_eval(parse(code.split()))['_val_']
+syntax_plain = lambda code: code
+def trapl_eval(code, syntax=syntax_plain):
+    return _trapl_eval(parse(syntax(code).split()))['_val_']
+def syntax_rich(code):
+    for o, s in {'(': ' ( ', ')': ' ) ', '@': 'trapl with '}.items():
+        code = code.replace(o, s)
+    return code
 
-if __name__ == '__main__': print trapl_eval(raw_input())
+if __name__ == '__main__': print trapl_eval(raw_input(), syntax=syntax_rich)
