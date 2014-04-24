@@ -34,7 +34,7 @@ TRAPL = BASE_OBJ({
     'eval': BASE_OBJ(_call_=lambda code: BASE_OBJ(
         _magic_='eval', _magic_code_=code,
     )),
-    'expr': BASE_OBJ(_magic_='expr'),
+    'code': BASE_OBJ(_magic_='code'),
     'with': BASE_OBJ(_call_=lambda name: BASE_OBJ(_call_=lambda val: BASE_OBJ(
         _magic_='with', _magic_name_=name._val_, _magic_value_=val,
     ))),
@@ -80,7 +80,7 @@ def _trapl_eval(tree, context=None):
             elif curr._magic_ == 'eval':
                 utree = parse(curr._magic_code_._val_.split())
                 curr = _trapl_eval(utree, context)
-            elif curr._magic_ == 'expr':
+            elif curr._magic_ == 'code':
                 to_the_end, tree = tree, []
                 curr = TRAPL['str'](_val_=flatten(to_the_end))
     return curr or BASE_OBJ
