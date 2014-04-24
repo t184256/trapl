@@ -4,6 +4,11 @@
 from trapl import trapl_eval
 
 TESTS = (
+    ('Hello_world!', 'Hello_world!'),
+    ('Hello_world! len', 12),
+    ('Hello_world! len str rev', '21'),
+    ('trapl int new 100 neg', -100),
+    ('trapl int new ( Hello_world! len str rev ) dec', 20),
     ('trapl int new 1 add ( trapl int new 2 ) inc', 4),
     ('trapl int new ( trapl str new 14 ) dec', 13),
     ('trapl with hi hello  hi', 'hello'),
