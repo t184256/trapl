@@ -2,6 +2,8 @@
 # Toy Reduced Awful Programming Language
 # Copyright (c) 2014 Alexander Sosedkin <monk@unboiled.info>, see LICENSE file
 
+import re, base64
+
 class TRAPLError(RuntimeError): pass
 
 class mydict(dict):
@@ -28,13 +30,16 @@ TRAPL = BASE_OBJ({
         'add': BASE_OBJ(_meth_=lambda a: BASE_OBJ(_call_=lambda b:
             TRAPL['int'](_val_=a._val_ + b._val_)
         )),
-        'str': BASE_OBJ(_meth_=lambda a: TRAPL['str'](_val_=str(a._val_)))
+        'str': BASE_OBJ(_meth_=lambda a: TRAPL['str'](_val_=str(a._val_))),
     }),
     'str': BASE_OBJ({
         '_val_': '',
         'new': BASE_OBJ(_call_=lambda s: TRAPL['str'](_val_=s._val_)),
         'rev': BASE_OBJ(_meth_=lambda s: TRAPL['str'](_val_=s._val_[::-1])),
         'len': BASE_OBJ(_meth_=lambda s: TRAPL['int'](_val_=len(s._val_))),
+        'dec': BASE_OBJ(_call_=lambda e:
+            TRAPL['str'](_val_=decode_str(e._val_))
+        ),
     }),
     'ign': BASE_OBJ(_call_=lambda x: x),
     'ext': BASE_OBJ(_call_=lambda o:
@@ -93,7 +98,15 @@ def _trapl_eval(tree, context=None):
 syntax_plain = lambda code: code
 def trapl_eval(code, syntax=syntax_plain):
     return _trapl_eval(parse(syntax(code).split()))['_val_']
+
+encode_str = lambda s: 'ENC' + base64.b32encode(s).replace('=', '0')
+decode_str = lambda s: base64.b32decode(s[3:].replace('0', '='))
+
 def syntax_rich(code):
+    code = re.sub(r"(\s|^)'((\\'|[^'])*?)'(\s|$)",
+        lambda m: ' (trapl str dec ' +
+                  encode_str(m.group(2).replace('\\\'', '\'')) + ') ',
+        code, flags=re.MULTILINE)
     for o, s in {'(': ' ( ', ')': ' ) ', '@': 'trapl with '}.items():
         code = code.replace(o, s)
     return code
