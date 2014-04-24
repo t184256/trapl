@@ -37,6 +37,11 @@ TRAPL = BASE_OBJ({
         'len': BASE_OBJ(_meth_=lambda s: TRAPL['int'](_val_=len(s._val_))),
     }),
     'ign': BASE_OBJ(_call_=lambda x: x),
+    'ext': BASE_OBJ(_call_=lambda o:
+        BASE_OBJ(_call_=lambda name: BASE_OBJ(_call_=lambda ext:
+            o({name._val_: ext})
+        )
+    )),
     'code': BASE_OBJ(_magic_='code'),
     'eval': BASE_OBJ(_call_=lambda code: BASE_OBJ(
         _magic_='eval', _magic_code_=code,

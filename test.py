@@ -18,6 +18,7 @@ TESTS = (
     ('trapl with s abc  trapl eval ( trapl code s rev )', 'cba'),
     ('trapl with s abc  trapl with s Z  trapl eval ( trapl code s )', 'abc'),
     ('trapl with X s  trapl with X abc  trapl eval ( trapl code s )', 'abc'),
+    ('trapl with hello ( trapl ext hello shorten hi )  hello shorten', 'hi'),
 )
 
 if __name__ == '__main__':
