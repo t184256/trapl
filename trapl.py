@@ -50,11 +50,9 @@ TRAPL = BASE_OBJ({
     }),
     'ign': BASE_OBJ(_call_=lambda x: x),
     'skip': BASE_OBJ(_call_=lambda x: BASE_OBJ(_call_=lambda y: x)),
-    'ext': BASE_OBJ(_call_=lambda o:
-        BASE_OBJ(_call_=lambda name: BASE_OBJ(_call_=lambda ext:
-            o({name._val_: ext})
-        )
-    )),
+    'ext': BASE_OBJ(_call_=lambda o: BASE_OBJ(_call_=lambda name:
+            BASE_OBJ(_call_=lambda ext: o({name._val_: ext})
+    ))),
     'code': BASE_OBJ(_magic_='code'),
     'eval': BASE_OBJ(_call_=lambda code: BASE_OBJ(
         _magic_='eval', _magic_code_=code,
@@ -130,7 +128,7 @@ quotes = lambda code: re.sub(r"\B'([^'\\]*(?:\\.[^'\\]*)*)'\B",
         include_str(m.group(1).replace('\\\'', '\'').replace('\\\\', '\\')),
     code, flags=re.MULTILINE)
 dots = lambda code: re.sub(r"(\w*(?:\.(?:\w*))+)", lambda m:
-        ' ( ' + m.group(1).split('.')[0] + ' ' + 
+        ' ( ' + m.group(1).split('.')[0] + ' ' +
         ' '.join(include_str(s) for s in m.group(1).split('.')[1:]) +
         ' ) ',
     code)
