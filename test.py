@@ -33,6 +33,7 @@ TESTS = (
     ("@mint (trapl atch (trapl int) 'ig' (trapl ign))  mint new 4 ig ig", 4),
     ("@mstr (trapl atch '' 'n' (trapl dtch 'smth' new))  mstr n Z", 'Z'),
     ("@ 'x' trapl.int  @ 'x' x.inc  @ 'x' x.inc.inc  x", 3),
+    ("x = 'abc'  x = 'zte'  x", 'zte'),
 )
 
 if __name__ == '__main__':
