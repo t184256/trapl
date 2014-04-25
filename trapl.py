@@ -118,9 +118,9 @@ encode_str = lambda s: 'ENC' + base64.b32encode(s).replace('=', '0')
 decode_str = lambda s: base64.b32decode(s[3:].replace('0', '='))
 
 def syntax_rich(code):
-    code = re.sub(r"(\s|^)'((\\'|[^'])*?)'(\s|$)",
-        lambda m: ' (trapl str dec ' +
-                  encode_str(m.group(2).replace('\\\'', '\'')) + ') ',
+    code = re.sub(r"(?:\s|^)'([^'\\]*(?:\\.[^'\\]*)*)'(?:\s|$)",
+        lambda m: ' (trapl str dec ' + encode_str(
+            m.group(1).replace('\\\'', '\'').replace('\\\\', '\\')) + ') ',
         code, flags=re.MULTILINE)
     for o, s in {'(': ' ( ', ')': ' ) ', '@': 'trapl with '}.items():
         code = code.replace(o, s)
