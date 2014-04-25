@@ -84,6 +84,8 @@ def trapl_apply(to, what):
     # TODO LATER: Implement this functionality in trapl, remove from here
     elif '_get_' in to:
         x = trapl_apply(trapl_apply(to, TRAPL['str'](_val_='_get_')), what)
+    else:
+        raise TRAPLError('No %s in %s' % (what._val_, to.keys()))
     if '_meth_' in x: return x._meth_(to)
     return x
 
