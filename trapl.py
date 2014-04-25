@@ -127,9 +127,16 @@ quotes = lambda code: re.sub(r"(?:\s|^)'([^'\\]*(?:\\.[^'\\]*)*)'(?:\s|$)",
     lambda m: ' (trapl str dec ' + encode_str(
         m.group(1).replace('\\\'', '\'').replace('\\\\', '\\')) + ') ',
     code, flags=re.MULTILINE)
+dots = lambda code: re.sub(r"(\w*(?:\.(?:\w*))+)", lambda m:
+        ' ( ' + m.group(1).split('.')[0] + ' ' + 
+        ' '.join('(trapl str dec %s)' % encode_str(s)
+                 for s in m.group(1).split('.')[1:]) +
+        ' ) ',
+    code)
 
 def syntax_rich(code):
     code = quotes(quotes(code)) # Hack that solves 'a' 'b' overlapping
+    code = dots(code)
     for o, s in {'(': ' ( ', ')': ' ) ', '@': 'trapl with '}.items():
         code = code.replace(o, s)
     return code
