@@ -62,6 +62,13 @@ TRAPL = BASE_OBJ({
     'with': BASE_OBJ(_call_=lambda name: BASE_OBJ(_call_=lambda val: BASE_OBJ(
         _magic_='with', _magic_name_=name._val_, _magic_value_=val,
     ))),
+    'atch': BASE_OBJ(_call_=lambda o: BASE_OBJ(_call_=lambda name:
+        BASE_OBJ(_call_=lambda call:
+            o({name._val_: BASE_OBJ(_meth_=call._call_)})
+    ))),
+    'dtch': BASE_OBJ(_call_=lambda o: BASE_OBJ(_call_=lambda name:
+        BASE_OBJ(_call_=o[name._val_]._meth_)
+    )),
 })
 
 def parse(tokens):
@@ -116,12 +123,13 @@ def trapl_eval(code, syntax=syntax_plain):
 
 encode_str = lambda s: 'ENC' + base64.b32encode(s).replace('=', '0')
 decode_str = lambda s: base64.b32decode(s[3:].replace('0', '='))
+quotes = lambda code: re.sub(r"(?:\s|^)'([^'\\]*(?:\\.[^'\\]*)*)'(?:\s|$)",
+    lambda m: ' (trapl str dec ' + encode_str(
+        m.group(1).replace('\\\'', '\'').replace('\\\\', '\\')) + ') ',
+    code, flags=re.MULTILINE)
 
 def syntax_rich(code):
-    code = re.sub(r"(?:\s|^)'([^'\\]*(?:\\.[^'\\]*)*)'(?:\s|$)",
-        lambda m: ' (trapl str dec ' + encode_str(
-            m.group(1).replace('\\\'', '\'').replace('\\\\', '\\')) + ') ',
-        code, flags=re.MULTILINE)
+    code = quotes(quotes(code)) # Hack that solves 'a' 'b' overlapping
     for o, s in {'(': ' ( ', ')': ' ) ', '@': 'trapl with '}.items():
         code = code.replace(o, s)
     return code
