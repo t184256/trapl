@@ -24,6 +24,8 @@ TESTS = (
     ('@x abc  @x 100500  @x xoth  x', 'abc'),
     ("'Hello world!\'", 'Hello world!'),
     ("'\\'Hello \\' world!\\''", "'Hello ' world!'"),
+    ("@s abc  @s Z  trapl eval ( trapl code s )", 'abc'),
+    ("@ 's' abc  @ 's' Z  trapl eval ( trapl code s )", 'Z'),
     ('@mint (trapl ext (trapl int) _get_ (trapl ign))  mint new 4 x', 'x'),
     ('@mstr (trapl ext (trapl str) _get_ (pre cat))  mstr new Z 7', 'pre7'),
 )
