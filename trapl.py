@@ -23,25 +23,33 @@ TRAPL = BASE_OBJ({
     'obj': BASE_OBJ,
     'int': BASE_OBJ({
         '_val_': 0,
-        'new': BASE_OBJ(_call_=lambda s: TRAPL['int'](_val_=int(s._val_))),
-        'neg': BASE_OBJ(_meth_=lambda i: TRAPL['int'](_val_=-i._val_)),
-        'inc': BASE_OBJ(_meth_=lambda i: TRAPL['int'](_val_=i._val_ + 1)),
-        'dec': BASE_OBJ(_meth_=lambda i: TRAPL['int'](_val_=i._val_ - 1)),
+        'new': BASE_OBJ(_meth_=lambda i: BASE_OBJ(_call_=lambda s:
+            i(_val_=int(s._val_))
+        )),
+        'neg': BASE_OBJ(_meth_=lambda i: i(_val_=-i._val_)),
+        'inc': BASE_OBJ(_meth_=lambda i: i(_val_=(i._val_ + 1))),
+        'dec': BASE_OBJ(_meth_=lambda i: i(_val_=(i._val_ - 1))),
         'add': BASE_OBJ(_meth_=lambda a: BASE_OBJ(_call_=lambda b:
-            TRAPL['int'](_val_=a._val_ + b._val_)
+            a(_val_=a._val_ + b._val_)
         )),
         'str': BASE_OBJ(_meth_=lambda a: TRAPL['str'](_val_=str(a._val_))),
     }),
     'str': BASE_OBJ({
         '_val_': '',
-        'new': BASE_OBJ(_call_=lambda s: TRAPL['str'](_val_=s._val_)),
-        'rev': BASE_OBJ(_meth_=lambda s: TRAPL['str'](_val_=s._val_[::-1])),
+        'new': BASE_OBJ(_meth_=lambda s: BASE_OBJ(_call_=lambda n:
+            s(_val_=n._val_),
+        )),
+        'cat': BASE_OBJ(_meth_=lambda s: BASE_OBJ(_call_=lambda n:
+            s(_val_=(s._val_ + n._val_))
+        )),
         'len': BASE_OBJ(_meth_=lambda s: TRAPL['int'](_val_=len(s._val_))),
-        'dec': BASE_OBJ(_call_=lambda e:
-            TRAPL['str'](_val_=decode_str(e._val_))
-        ),
+        'rev': BASE_OBJ(_meth_=lambda s: s(_val_=s._val_[::-1])),
+        'dec': BASE_OBJ(_meth_=lambda s: BASE_OBJ(_call_=lambda e:
+            s(_val_=decode_str(e._val_))
+        )),
     }),
     'ign': BASE_OBJ(_call_=lambda x: x),
+    'skip': BASE_OBJ(_call_=lambda x: BASE_OBJ(_call_=lambda y: x)),
     'ext': BASE_OBJ(_call_=lambda o:
         BASE_OBJ(_call_=lambda name: BASE_OBJ(_call_=lambda ext:
             o({name._val_: ext})
@@ -70,7 +78,12 @@ flatten = lambda t: \
 
 def trapl_apply(to, what):
     if '_call_' in to: return to._call_(what)
-    x = to[what._val_]
+    if not '_val_' in what: raise TRAPLError('No _val_ in %s' % what)
+    if what._val_ in to:
+        x = to[what._val_]
+    # TODO LATER: Implement this functionality in trapl, remove from here
+    elif '_get_' in to:
+        x = trapl_apply(trapl_apply(to, TRAPL['str'](_val_='_get_')), what)
     if '_meth_' in x: return x._meth_(to)
     return x
 
