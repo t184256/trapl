@@ -113,6 +113,7 @@ def _trapl_eval(tree, context=None):
                 utree = parse(curr._magic_code_._val_.split())
                 curr = _trapl_eval(utree, context)
             elif curr._magic_ == 'code':
+                # TODO: fall out of current brace if empty (allows trapl.code)
                 to_the_end, tree = tree, []
                 curr = TRAPL['str'](_val_=flatten(to_the_end))
     return curr or BASE_OBJ
@@ -145,4 +146,7 @@ def syntax_rich(code):
         code = code.replace(o, s)
     return code
 
-if __name__ == '__main__': print trapl_eval(raw_input(), syntax=syntax_rich)
+if __name__ == '__main__':
+    import sys
+    for f in [file(fname) for fname in sys.argv[1:]] or [sys.stdin]:
+        print trapl_eval(f.read(), syntax=syntax_rich)
