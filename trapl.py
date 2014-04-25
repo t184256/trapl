@@ -123,18 +123,13 @@ def trapl_eval(code, syntax=syntax_plain):
 encode_str = lambda s: 'ENC' + base64.b32encode(s).replace('=', '0')
 decode_str = lambda s: base64.b32decode(s[3:].replace('0', '='))
 include_str = lambda s: ' ( trapl str dec %s ) ' % encode_str(s)
-quotes = lambda code: re.sub(r"\B'([^'\\]*(?:\\.[^'\\]*)*)'\B",
-    lambda m:
-        include_str(m.group(1).replace('\\\'', '\'').replace('\\\\', '\\')),
-    code, flags=re.MULTILINE)
+quotes = lambda code: re.sub(r"\B'([^'\\]*(?:\\.[^'\\]*)*)'\B", lambda m:
+    include_str(m.group(1).replace('\\\'', '\'').replace('\\\\', '\\')), code)
 dots = lambda code: re.sub(r"(\w*(?:\.(?:\w*))+)", lambda m:
-        ' ( ' + m.group(1).split('.')[0] + ' ' +
-        ' '.join(include_str(s) for s in m.group(1).split('.')[1:]) +
-        ' ) ',
-    code)
+    ' ( ' + m.group(1).split('.')[0] + ' ' +
+    ' '.join(include_str(s) for s in m.group(1).split('.')[1:]) + ' ) ', code)
 assign = lambda code: re.sub(r"(\w*)(?:\s*)=", lambda m:
-        'trapl with %s ' % include_str(m.group(1)),
-    code)
+    'trapl with %s ' % include_str(m.group(1)), code)
 
 def syntax_rich(code):
     code = quotes(code)
