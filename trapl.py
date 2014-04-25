@@ -125,7 +125,7 @@ def trapl_eval(code, syntax=syntax_plain):
 encode_str = lambda s: 'ENC' + base64.b32encode(s).replace('=', '0')
 decode_str = lambda s: base64.b32decode(s[3:].replace('0', '='))
 include_str = lambda s: ' ( trapl str dec %s ) ' % encode_str(s)
-quotes = lambda code: re.sub(r"(?:\s|^)'([^'\\]*(?:\\.[^'\\]*)*)'(?:\s|$)",
+quotes = lambda code: re.sub(r"\B'([^'\\]*(?:\\.[^'\\]*)*)'\B",
     lambda m:
         include_str(m.group(1).replace('\\\'', '\'').replace('\\\\', '\\')),
     code, flags=re.MULTILINE)
@@ -139,7 +139,7 @@ assign = lambda code: re.sub(r"(\w*)(?:\s*)=", lambda m:
     code)
 
 def syntax_rich(code):
-    code = quotes(quotes(code)) # Hack that solves 'a' 'b' overlapping
+    code = quotes(code)
     code = dots(code)
     code = assign(code)
     for o, s in {'(': ' ( ', ')': ' ) ', '@': 'trapl with '}.items():
