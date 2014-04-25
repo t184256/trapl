@@ -28,6 +28,7 @@ TESTS = (
     ("@ 's' abc  @ 's' Z  trapl eval ( trapl code s )", 'Z'),
     ('@mint (trapl ext (trapl int) _get_ (trapl ign))  mint new 4 x', 'x'),
     ('@mstr (trapl ext (trapl str) _get_ (pre cat))  mstr new Z 7', 'pre7'),
+    ("@ '4+' (trapl int new 4 add) @ '7' (trapl int new 7)  4+ 7", 11),
 )
 
 if __name__ == '__main__':
