@@ -37,6 +37,9 @@ TESTS = (
     ("f = (trapl func x (trapl code 'hello' cat x rev))  f 'me'", 'emolleh'),
     ("f = {x|'hello' cat x rev}  f 'me'", 'emolleh'),
     ("f = {x|{z|x cat z cat x}}  f who let", 'wholetwho'),
+    ("f = {x z|x cat z cat x}  f who let", 'wholetwho'),
+    ("backapply = {x z|z x}  backapply int trapl", 0),
+    ("backapply={ x z | z x }  backapply int trapl", 0),
 )
 
 if __name__ == '__main__':

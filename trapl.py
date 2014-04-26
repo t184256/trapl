@@ -77,6 +77,7 @@ TRAPL = BASE_OBJ({
 })
 
 def parse(tokens):
+    if isinstance(tokens, str): tokens = tokens.split()
     tree = []
     while tokens:
         t = tokens.pop(0)
@@ -115,7 +116,7 @@ def _trapl_eval(tree, context=None):
                 context[curr._magic_name_] = curr._magic_value_
                 curr = TRAPL['ign']
             elif curr._magic_ == 'eval':
-                utree = parse(curr._magic_code_._val_.split())
+                utree = parse(curr._magic_code_._val_)
                 ctx = context
                 if '_magic_context_' in curr: ctx.update(curr._magic_context_)
                 curr = _trapl_eval(utree, ctx)
@@ -127,7 +128,7 @@ def _trapl_eval(tree, context=None):
 
 syntax_plain = lambda code: code
 def trapl_eval(code, syntax=syntax_plain):
-    return _trapl_eval(parse(syntax(code).split()))['_val_']
+    return _trapl_eval(parse(syntax(code)))['_val_']
 
 encode_str = lambda s: 'ENC' + base64.b32encode(s).replace('=', '0')
 decode_str = lambda s: base64.b32decode(s[3:].replace('0', '='))
@@ -139,15 +140,27 @@ dots = lambda code: re.sub(r"(\w*(?:\.(?:\w*))+)", lambda m:
     ' '.join(include_str(s) for s in m.group(1).split('.')[1:]) + ' ) ', code)
 assign = lambda code: re.sub(r"(\w*)(?:\s*)=", lambda m:
     'trapl with %s ' % include_str(m.group(1)), code)
-func_l = lambda code: re.sub(r"\B{(?:(?:\s*)(\w+)(?:\s*))+\|",
-    ' ( trapl func \\1 ( trapl code ', code)
-func_r = lambda code: code.replace('}', ' ) ) ')
+
+curly_func = lambda code: flatten(_curly_func(parse(
+    code.replace('{', ' ( { ').replace('}', ' } ) ').replace('|', ' | ')
+)))
+funcize = lambda argname, tree: \
+    ['trapl', 'func', "'%s'" % argname, ['trapl', 'code'] + tree]
+def _curly_func(tree):
+    if isinstance(tree, str): return tree
+    if len(tree) > 3:
+        if tree[0] == '{' and '|' in tree[1:-1] and tree[-1] == '}':
+            i = tree[1:-1].index('|') + 1
+            args, tree = tree[1:i], tree[i+1:-1]
+            for a in args[::-1]: tree = funcize(a, tree)
+    return [_curly_func(t) for t in tree]
 
 def syntax_rich(code):
     code = quotes(code)
+    code = curly_func(code)
+    code = quotes(code) # Hack needed because funcise relies on quoting
     code = dots(code)
     code = assign(code)
-    code = func_l(func_r(code))
     for o, s in {'(': ' ( ', ')': ' ) ', '@': 'trapl with '}.items():
         code = code.replace(o, s)
     return code
