@@ -3,7 +3,7 @@
 
 from trapl import trapl_eval, syntax_rich
 
-TESTS = (
+TESTS_CORE_SYNTAX = (
     ('Hello_world!', 'Hello_world!'),
     ('Hello_world! len', 12),
     ('Hello_world! len str rev', '21'),
@@ -26,9 +26,11 @@ TESTS = (
     ('hello eq hello or z', True),
     ('3 eq 4 not and also', 'also'),
     ('trapl ign x', 'x'),
-    ('sum = ( trapl func a ( a cat 5 ) )  sum 4', 'a5'),
-    ('sum = ( trapl func a ( trapl code a cat 5 ) )  sum 4', '45'),
-    # Rich syntax examples
+    ('trapl with sum ( trapl func a ( a cat 5 ) )  sum 4', 'a5'),
+    ('trapl with sum ( trapl func a ( trapl code a cat 5 ) )  sum 4', '45'),
+)
+
+TESTS_RICH_SYNTAX = (
     ("@hello (trapl ext hello shorten hi)  hello shorten", 'hi'),
     ("@x abc  @x 100500  @x xoth  x", 'abc'),
     ("'Hello world!'", 'Hello world!'),
@@ -64,13 +66,15 @@ TESTS = (
     ("twisted = {f x y|f y x}  post4 = {x|twisted x 4 cat}  post4 2", '24'),
     ("t={f x y|f y x}  post={p x|t x p cat}  trapl.drop 't'  post 4 2", '24'),
     ("""
-        t = {f x y|f y x}
-        s = {x f|x add (f neg)}
-        st = (t s)
-        st trapl.int.new.3 trapl.int.new.4
+     t = {f x y|f y x}
+     s = {x f|x add (f neg)}
+     st = (t s)
+     st trapl.int.new.3 trapl.int.new.4
      """, 1),
 )
 
 if __name__ == '__main__':
-    for code, result in TESTS:
+    for code, result in TESTS_CORE_SYNTAX:
+        assert trapl_eval(code) == result
+    for code, result in TESTS_RICH_SYNTAX:
         assert trapl_eval(code, syntax=syntax_rich) == result
