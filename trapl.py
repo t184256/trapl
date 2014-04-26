@@ -12,7 +12,7 @@
 # 1) if first is a 'callable' it calls a wrapped python functions of 1 argument
 # 2) if second is a 'method' it gets applied to the first object
 # Additional syntax is supported with source-to-source transformations.
-# The interpreter reuses python stack and more, remaining relatively compact.
+# The interpreter reuses python stack, closures... staying relatively compact.
 # For even simpler, but less capable versions, please refer to the previous
 # versions in the VCS (first version was very simple and < 87 lines long!).
 
@@ -36,7 +36,7 @@ METH = lambda body, **kwa: OBJ(_meth_=body, **kwa) # method and callables are
 CALL = lambda body, **kwa: OBJ(_call_=body, **kwa) # created like this
 # this is how you create a method of obj a that takes an additional parameter:
 EQ = METH(lambda a: CALL(lambda b: # this means the method returns a callable
-    TRAPL['true'] if a == b else TRAPL['false'] # which then returns this
+    TRAPL['true'] if a._val_ == b._val_ else TRAPL['false'] # which returns this
 ))
 TRAPL = OBJ({ # let's define the standard library, accessible later as 'trapl'
     'obj': OBJ, # provide a means of accessing the original, blank object
@@ -75,23 +75,24 @@ TRAPL = OBJ({ # let's define the standard library, accessible later as 'trapl'
     'ext': CALL(lambda o: CALL(lambda n: CALL(lambda w: o({n._val_: w})))),
     'code': OBJ(_magic_='code'), # objects with _magic_ are special
     'eval': CALL(lambda code: OBJ(_magic_='eval', _magic_code_=code)),
+    'drop': CALL(lambda name: OBJ(_magic_='drop', _magic_name_=name._val_)),
     'with': CALL(lambda name: CALL(lambda val:
         OBJ(_magic_='with', _magic_name_=name._val_, _magic_value_=val)
     )), # injects {name._val_: val} in current context, see trapl_eval
     'func': CALL(lambda arg_name: CALL(lambda code:
-        CALL(lambda arg_val: # returns what 
-            OBJ(
-                _magic_='eval', _magic_code_=code,
-                _magic_context_={arg_name._val_: arg_val}
-            ), code=code
-        ) # Given an argument name and a piece of code created with trapl code
-    )), # returns a callable will evaluate code with {arg_name._val_: arg_val}
+        OBJ(_magic_='func', _magic_code_=code, _magic_arg_name_=arg_name),
+    )), # make a callable will evaluate code with {arg_name._val_: arg_val}
     'atch': CALL(lambda o: CALL(lambda name: CALL(lambda call:
             o({name._val_: METH(call._call_)})
     ))), # Attaches a callable call to an object o as amethod with name name
     'dtch': CALL(lambda o: CALL(lambda name:
         CALL(o[name._val_]._meth_)
     )), # Returns a method detached from an object and turned into a callable
+    'if': CALL(lambda cond:
+        CALL(lambda val_true: CALL(lambda unused_val_false: val_true))
+        if cond._val_ == True else
+        CALL(lambda unused_val_true: CALL(lambda val_false: val_false))
+    ),
 })
 TRAPL = TRAPL({'true': TRAPL['false'](_val_=True)}) # add true reusing false
 
@@ -101,7 +102,7 @@ def parse(tokens): # turns 'a ( b ( c ) d )' into ['a', ['b', ['c'], 'd']]
     while tokens:
         t = tokens.pop(0)
         if t == '(': tree.append(parse(tokens))
-        elif t == ')': return tree
+        elif t == ')': break
         else: tree.append(t)
     return tree
 
@@ -127,7 +128,7 @@ def _trapl_eval(tree, context=None, default_object=OBJ): # evaluate a tree
     context = {'trapl': TRAPL} if context is None else context.copy()
     curr = None
     while tree:
-        next = tree.pop(0)
+        next, tree = tree[0], tree[1:]
         if isinstance(next, list): next = _trapl_eval(next, context)
         if isinstance(next, str): # Autocast unknown literals to strings
             next = context.get(next, TRAPL['str'](_val_=next))
@@ -136,15 +137,23 @@ def _trapl_eval(tree, context=None, default_object=OBJ): # evaluate a tree
             if curr._magic_ == 'with': # inject a value in current context
                 context[curr._magic_name_] = curr._magic_value_
                 curr = TRAPL['ign']
+            elif curr._magic_ == 'drop': # inject a value in current context
+                del context[curr._magic_name_]
+                curr = TRAPL['ign']
             elif curr._magic_ == 'eval': # evaluate a string
                 utree = parse(curr._magic_code_._val_)
-                ctx = context
-                if '_magic_context_' in curr: ctx.update(curr._magic_context_)
-                curr = _trapl_eval(utree, ctx)
+                curr = _trapl_eval(utree, context.copy())
+            elif curr._magic_ == 'func': # create a function (closure)
+                utree = parse(curr._magic_code_._val_)
+                ctx, arg_name = context.copy(), curr._magic_arg_name_._val_
+                def actual_func(arg_value):
+                    ctx[arg_name] = arg_value
+                    return _trapl_eval(utree, ctx)
+                curr = CALL(actual_func)
             elif curr._magic_ == 'code': # create a string from remaining code
                 # TODO: fall out of current brace if empty (allows trapl.code)
-                remaining_code, tree = tree, [] # and stop interpreting it
-                curr = TRAPL['str'](_val_=flatten(remaining_code))
+                curr = TRAPL['str'](_val_=flatten(tree))
+                tree = []
     return curr or default_object
 
 syntax_plain = lambda code: code # source code transformations may be used
@@ -165,22 +174,23 @@ curly_func = lambda code: flatten(_curly_func(parse(
     code.replace('{', ' ( { ').replace('}', ' } ) ').replace('|', ' | ')
 )))
 funcize = lambda argname, tree: \
-    ['trapl', 'func', "'%s'" % argname, ['trapl', 'code'] + tree]
+    ['trapl', 'func', parse(include_str(argname)), ['trapl', 'code'] + tree]
 def _curly_func(tree):
     if isinstance(tree, str): return tree
     if len(tree) > 3:
         if tree[0] == '{' and '|' in tree[1:-1] and tree[-1] == '}':
             i = tree[1:-1].index('|') + 1
             args, tree = tree[1:i], tree[i+1:-1]
-            for a in args[::-1]: tree = funcize(a, tree)
+            for a in args[::-1]:
+                tree = funcize(a, tree)
     return [_curly_func(t) for t in tree]
 
 def syntax_rich(code): # apply lots of source-to-source transformations
-    # convert 'a' into ( trapl string dec ENCSFD ) to protect it
+    # convert 'a' into ( trapl string dec ENCSMTH ) to protect it
     code = quotes(code) # from futher damage, respects escaping
     # convert {a b|b a} -> (trapl func a ( trapl code ( trapl func b (
+    code = code.replace('(', ' ( ').replace(')', ' ) ') # HACK: deduplicate
     code = curly_func(code) # trapl code b a ) ) ) )
-    code = quotes(code) # hack needed because funcise relies on quoting
     code = dots(code) # convert t = trapl.true -> t = (trapl true)
     code = assign(code) # convert t=(trapl true) -> trapl with t (trapl true)
     # puts spaces around braces so they become separate tokens

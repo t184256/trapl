@@ -26,6 +26,8 @@ TESTS = (
     ('hello eq hello or z', True),
     ('3 eq 4 not and also', 'also'),
     ('trapl ign x', 'x'),
+    ('sum = ( trapl func a ( a cat 5 ) )  sum 4', 'a5'),
+    ('sum = ( trapl func a ( trapl code a cat 5 ) )  sum 4', '45'),
     # Rich syntax examples
     ("@hello (trapl ext hello shorten hi)  hello shorten", 'hi'),
     ("@x abc  @x 100500  @x xoth  x", 'abc'),
@@ -43,12 +45,20 @@ TESTS = (
     ("x = 'abc'  x = 'zte'  x", 'zte'),
     ("f = (trapl func x (trapl code 'hello' cat x rev))  f 'me'", 'emolleh'),
     ("f = {x|'hello' cat x rev}  f 'me'", 'emolleh'),
+    ("{x|'hello' cat x rev} 'me'", 'emolleh'),
     ("f = {x|{z|x cat z cat x}}  f who let", 'wholetwho'),
     ("f = {x z|x cat z cat x}  f who let", 'wholetwho'),
     ("backapply = {x z|z x}  backapply int trapl", 0),
     ("backapply={ x z | z x }  backapply int trapl", 0),
     ("t=trapl.true  cmp={a b|a eq b}  cmp 3 4 not and (cmp t t)", True),
     ("t=trapl.true  neq={a b|a eq b not}  neq 3 4 and (neq t (t not))", True),
+    ("match={a b|trapl.if (a eq b) 'yes' 'no' } match ('eh' rev) 'he'", 'yes'),
+    ("match={a b|trapl.if (a eq b) 'yes' 'no' } match 'nei' 'he'", 'no'),
+    ("fi = {c e t|trapl.if c t e}  fi trapl.true 'x' 'y'", 'y'),
+    ("fi = {c e t|trapl.if c t e}  fi trapl.false 'x' 'y'", 'x'),
+    ("sum = {a b|a cat b}  hll = (sum hel)  hll lo", 'hello'),
+    ("s={a b|a cat b} (s (s h i) (s h i))", 'hihi'),
+    ("pre = 'zz'  f = {x|pre cat x}  trapl.drop 'pre' f x", 'zzx'),
 )
 
 if __name__ == '__main__':
