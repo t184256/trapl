@@ -185,12 +185,16 @@ def _curly_func(tree):
                 tree = funcize(a, tree)
     return [_curly_func(t) for t in tree]
 
+autoint = lambda code: re.sub(r"\b([-+]\d+)\b", lambda m:
+    ' ( trapl int new ' + include_str(m.group(1)) + ' ) ', code)
+
 def syntax_rich(code): # apply lots of source-to-source transformations
     # convert 'a' into ( trapl string dec ENCSMTH ) to protect it
     code = quotes(code) # from futher damage, respects escaping
     # convert {a b|b a} -> (trapl func a ( trapl code ( trapl func b (
     code = code.replace('(', ' ( ').replace(')', ' ) ') # HACK: deduplicate
     code = curly_func(code) # trapl code b a ) ) ) )
+    code = autoint(code) # convert 3 -> ( trapl int new 3 )
     code = dots(code) # convert t = trapl.true -> t = (trapl true)
     code = assign(code) # convert t=(trapl true) -> trapl with t (trapl true)
     # puts spaces around braces so they become separate tokens
