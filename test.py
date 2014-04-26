@@ -39,8 +39,8 @@ TESTS_RICH_SYNTAX = (
     ("@s abc  @s Z  trapl eval ( trapl code s )", 'abc'),
     ("@ 's' abc  @ 's' Z  trapl eval ( trapl code s )", 'Z'),
     ("@mint (trapl ext (trapl int) _get_ (trapl ign))  mint new 4 x", 'x'),
-    ("@mstr (trapl ext (trapl str) _get_ (pre cat))  mstr new Z 7", 'pre7'),
-    ("@ '4+' (trapl int new 4 add) @ '7' (trapl int new 7)  4+ 7", 11),
+    ("@mstr (trapl ext (trapl str) _get_ (pre cat))  mstr new Z '7'", 'pre7'),
+    ("@ '4+' (4 add) @ '7' (7)  trapl get '4+' 7", 11),
     ("@mint (trapl atch (trapl int) 'ig' (trapl ign))  mint new 4 ig ig", 4),
     ("@mstr (trapl atch '' 'n' (trapl dtch 'smth' new))  mstr n Z", 'Z'),
     ("@ 'x' trapl.int  @ 'x' x.inc  @ 'x' x.inc.inc  x", 3),
@@ -63,13 +63,13 @@ TESTS_RICH_SYNTAX = (
     ("pre = 'zz'  f = {x|pre cat x}  trapl.drop 'pre' f x", 'zzx'),
     ("bk = {x y|y x}  bk drop trapl  'bk' bk", 'bk'),
     ("twisted = {f x y|f y x}  tst = (twisted '')  tst 'hello' cat", 'hello'),
-    ("twisted = {f x y|f y x}  post4 = {x|twisted x 4 cat}  post4 2", '24'),
-    ("t={f x y|f y x}  post={p x|t x p cat}  trapl.drop 't'  post 4 2", '24'),
+    ("twisted = {f x y|f y x}  postX = {x|twisted x X cat}  postX Y", 'YX'),
+    ("t={f x y|f y x}  post={p x|t x p cat}  trapl.drop 't'  post Y X", 'XY'),
     ("""
      t = {f x y|f y x}
      s = {x f|x add (f neg)}
      st = (t s)
-     st trapl.int.new.3 trapl.int.new.4
+     st 3 4
      """, 1),
 )
 

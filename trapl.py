@@ -79,6 +79,7 @@ TRAPL = OBJ({ # let's define the standard library, accessible later as 'trapl'
     'with': CALL(lambda name: CALL(lambda val:
         OBJ(_magic_='with', _magic_name_=name._val_, _magic_value_=val)
     )), # injects {name._val_: val} in current context, see trapl_eval
+    'get': CALL(lambda name: OBJ(_magic_='get', _magic_name_=name._val_)),
     'func': CALL(lambda arg_name: CALL(lambda code:
         OBJ(_magic_='func', _magic_code_=code, _magic_arg_name_=arg_name),
     )), # make a callable will evaluate code with {arg_name._val_: arg_val}
@@ -140,6 +141,8 @@ def _trapl_eval(tree, context=None, default_object=OBJ): # evaluate a tree
             elif curr._magic_ == 'drop': # inject a value in current context
                 del context[curr._magic_name_]
                 curr = TRAPL['ign']
+            elif curr._magic_ == 'get': # get a value from current context
+                curr = context[curr._magic_name_] # see '4+' example in test.py
             elif curr._magic_ == 'eval': # evaluate a string
                 utree = parse(curr._magic_code_._val_)
                 curr = _trapl_eval(utree, context.copy())
@@ -185,7 +188,7 @@ def _curly_func(tree):
                 tree = funcize(a, tree)
     return [_curly_func(t) for t in tree]
 
-autoint = lambda code: re.sub(r"\b([-+]\d+)\b", lambda m:
+autoint = lambda code: re.sub(r"\b([-+]?\d+)\b", lambda m:
     ' ( trapl int new ' + include_str(m.group(1)) + ' ) ', code)
 
 def syntax_rich(code): # apply lots of source-to-source transformations
