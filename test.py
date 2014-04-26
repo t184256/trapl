@@ -64,6 +64,7 @@ TESTS_RICH_SYNTAX = (
     ("bk = {x y|y x}  bk drop trapl 'bk'  bk", 'bk'),
     ("a = {x y|x add y}  f = {x|a x 1}  x = 9  f 6", 7),
     ("a = {x y|x add y}  f = {y|a y 1}  y = 9  f 6", 7),
+    ("a = {x y|x add y}  f = {z y|a y 1}  y = 9  f 0 6", 7),
     ("a = {x y|x add y}  f = {x y|a y 1}  y = 9  f 0 6", 7),
     ("twisted = {f x y|f y x}  tst = (twisted '')  tst 'hello' cat", 'hello'),
     ("twisted = {f x y|f y x}  twisted Y Z cat", 'YZ'),
@@ -71,9 +72,11 @@ TESTS_RICH_SYNTAX = (
     ("t={f x y|f y x}  post={p x|t x p cat}  trapl.drop 't'  post Z Y", 'YZ'),
     ("t = {f x y|f y x}  s = {x f|x add (f neg)}  st = (t s)  st 3 4", 1),
     ("sub = { x y | x add (y neg) }  sub 3 (4 neg)", 7),
-    ("y = 'a'  f = { x | x cat y }  trapl.drop 'y'  f 'n'", 'na'),
-    ("y = 'a'  f = { x | x cat y }  y = 'b'  f 'n'", 'na'),
-    ("z = 'a'  f = { x | x cat y }  y = 'b'  f 'n'", 'nb'),
+    ("y = 'a'  x = 'j'         f = { x | x cat y }  y = 'b'  f n", 'na'),
+    ("y = 'a'                  f = { x | x cat y } trapl.drop 'y' f n", 'na'),
+    ("y = 'a'                  f = { x | x cat y }  y = 'b'  f n", 'na'),
+    ("                         f = { x | x cat y }  y = 'b'  f n", 'nb'),
+    ("y = 'a'  f = (trapl drop 'y' { x | x cat y }) y = 'b'  f n", 'nb'),
 )
 
 if __name__ == '__main__':
