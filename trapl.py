@@ -162,7 +162,8 @@ def _trapl_eval(tree, context=None, default_object=OBJ): # evaluate a tree
                         _magic_definition_context_=context,
                 ))
             elif curr._magic_ == 'code': # create a string from remaining code
-                # TODO: fall out of current brace if empty (allows trapl.code)
+                # fall out of current brace if empty (allows trapl.code)
+                if not tree: return curr
                 curr = TRAPL['str'](_val_=flatten(tree))
                 tree = []
     return curr or default_object
