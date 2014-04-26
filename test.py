@@ -77,6 +77,14 @@ TESTS_RICH_SYNTAX = (
     ("y = 'a'                  f = { x | x cat y }  y = 'b'  f n", 'na'),
     ("                         f = { x | x cat y }  y = 'b'  f n", 'nb'),
     ("y = 'a'  f = (trapl drop 'y' { x | x cat y }) y = 'b'  f n", 'nb'),
+    ("""
+    f = {x|trapl.eval(trapl.if (x eq 0) (
+       trapl.code 'x'
+      ) (
+       trapl.code (x str cat (f (x dec)))
+    ))}
+    f 3
+    """, '321x'),
 )
 
 if __name__ == '__main__':
