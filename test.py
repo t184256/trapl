@@ -61,12 +61,19 @@ TESTS_RICH_SYNTAX = (
     ("sum = {a b|a cat b}  hll = (sum hel)  hll lo", 'hello'),
     ("s={a b|a cat b} (s (s h i) (s h i))", 'hihi'),
     ("pre = 'zz'  f = {x|pre cat x}  trapl.drop 'pre' f x", 'zzx'),
-    ("bk = {x y|y x}  bk drop trapl  'bk' bk", 'bk'),
+    ("bk = {x y|y x}  bk drop trapl 'bk'  bk", 'bk'),
+    ("a = {x y|x add y}  f = {x|a x 1}  x = 9  f 6", 7),
+    ("a = {x y|x add y}  f = {y|a y 1}  y = 9  f 6", 7),
+    ("a = {x y|x add y}  f = {x y|a y 1}  y = 9  f 0 6", 7),
     ("twisted = {f x y|f y x}  tst = (twisted '')  tst 'hello' cat", 'hello'),
-    ("twisted = {f x y|f y x}  postX = {x|twisted x X cat}  postX Y", 'YX'),
-    ("t={f x y|f y x}  post={p x|t x p cat}  trapl.drop 't'  post Y X", 'XY'),
+    ("twisted = {f x y|f y x}  twisted Y Z cat", 'YZ'),
+    ("twisted = {f x y|f y x}  postZ = {x|twisted x Z cat}  postZ Y", 'YZ'),
+    ("t={f x y|f y x}  post={p x|t x p cat}  trapl.drop 't'  post Z Y", 'YZ'),
     ("t = {f x y|f y x}  s = {x f|x add (f neg)}  st = (t s)  st 3 4", 1),
     ("sub = { x y | x add (y neg) }  sub 3 (4 neg)", 7),
+    ("y = 'a'  f = { x | x cat y }  trapl.drop 'y'  f 'n'", 'na'),
+    ("y = 'a'  f = { x | x cat y }  y = 'b'  f 'n'", 'na'),
+    ("z = 'a'  f = { x | x cat y }  y = 'b'  f 'n'", 'nb'),
 )
 
 if __name__ == '__main__':

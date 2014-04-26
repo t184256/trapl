@@ -134,7 +134,7 @@ def _trapl_eval(tree, context=None, default_object=OBJ): # evaluate a tree
         if isinstance(next, str): # Autocast unknown literals to strings
             next = context.get(next, TRAPL['str'](_val_=next))
         curr = trapl_apply(curr, next) if not curr is None else next
-        if '_magic_' in curr: # Handle special messages to the interpreter
+        while '_magic_' in curr: # Handle special messages to the interpreter
             if curr._magic_ == 'with': # inject a value in current context
                 context[curr._magic_name_] = curr._magic_value_
                 curr = TRAPL['ign']
@@ -145,14 +145,22 @@ def _trapl_eval(tree, context=None, default_object=OBJ): # evaluate a tree
                 curr = context[curr._magic_name_] # see '4+' example in test.py
             elif curr._magic_ == 'eval': # evaluate a string
                 utree = parse(curr._magic_code_._val_)
-                curr = _trapl_eval(utree, context.copy())
+                ctx = context.copy()
+                if '_magic_definition_context_' in curr:
+                    ctx.update(curr._magic_definition_context_)
+                if '_magic_arg_val_' in curr:
+                    ctx[curr._magic_arg_name_._val_] = curr._magic_arg_val_
+                curr = _trapl_eval(utree, ctx)
             elif curr._magic_ == 'func': # create a function (closure)
-                utree = parse(curr._magic_code_._val_)
-                ctx, arg_name = context.copy(), curr._magic_arg_name_._val_
-                def actual_func(arg_value):
-                    ctx[arg_name] = arg_value
-                    return _trapl_eval(utree, ctx)
-                curr = CALL(actual_func)
+                ctx, arg_name = context.copy(), curr._magic_arg_name_
+                code = curr._magic_code_
+                curr = CALL(lambda arg_val:
+                    OBJ(_magic_='eval',
+                        _magic_code_=code,
+                        _magic_arg_name_=arg_name,
+                        _magic_arg_val_=arg_val,
+                        _magic_definition_context_=context,
+                ))
             elif curr._magic_ == 'code': # create a string from remaining code
                 # TODO: fall out of current brace if empty (allows trapl.code)
                 curr = TRAPL['str'](_val_=flatten(tree))
