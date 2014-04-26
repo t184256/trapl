@@ -64,11 +64,11 @@ TESTS = (
     ("twisted = {f x y|f y x}  post4 = {x|twisted x 4 cat}  post4 2", '24'),
     ("t={f x y|f y x}  post={p x|t x p cat}  trapl.drop 't'  post 4 2", '24'),
     ("""
-    t = {f x y|f y x}
-    s = {x f|x add (f neg)}
-    st = (t s)
-    st trapl.int.new.3 trapl.int.new.4
-    """, 1),
+        t = {f x y|f y x}
+        s = {x f|x add (f neg)}
+        st = (t s)
+        st trapl.int.new.3 trapl.int.new.4
+     """, 1),
 )
 
 if __name__ == '__main__':
