@@ -65,12 +65,7 @@ TESTS_RICH_SYNTAX = (
     ("twisted = {f x y|f y x}  tst = (twisted '')  tst 'hello' cat", 'hello'),
     ("twisted = {f x y|f y x}  postX = {x|twisted x X cat}  postX Y", 'YX'),
     ("t={f x y|f y x}  post={p x|t x p cat}  trapl.drop 't'  post Y X", 'XY'),
-    ("""
-     t = {f x y|f y x}
-     s = {x f|x add (f neg)}
-     st = (t s)
-     st 3 4
-     """, 1),
+    ("t = {f x y|f y x} s = {x f|x add (f neg)} st = (t s) st 3 4", 1),
 )
 
 if __name__ == '__main__':
