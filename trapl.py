@@ -60,6 +60,13 @@ TRAPL = BASE_OBJ({
     'with': BASE_OBJ(_call_=lambda name: BASE_OBJ(_call_=lambda val: BASE_OBJ(
         _magic_='with', _magic_name_=name._val_, _magic_value_=val,
     ))),
+    'func': BASE_OBJ(_call_=lambda arg_name: BASE_OBJ(_call_=lambda code:
+        BASE_OBJ(
+            code=code,
+            _call_=lambda arg_val: BASE_OBJ(
+                _magic_='eval', _magic_code_=code,
+                _magic_context_={arg_name._val_: arg_val}
+    )))),
     'atch': BASE_OBJ(_call_=lambda o: BASE_OBJ(_call_=lambda name:
         BASE_OBJ(_call_=lambda call:
             o({name._val_: BASE_OBJ(_meth_=call._call_)})
@@ -109,7 +116,9 @@ def _trapl_eval(tree, context=None):
                 curr = TRAPL['ign']
             elif curr._magic_ == 'eval':
                 utree = parse(curr._magic_code_._val_.split())
-                curr = _trapl_eval(utree, context)
+                ctx = context
+                if '_magic_context_' in curr: ctx.update(curr._magic_context_)
+                curr = _trapl_eval(utree, ctx)
             elif curr._magic_ == 'code':
                 # TODO: fall out of current brace if empty (allows trapl.code)
                 to_the_end, tree = tree, []

@@ -34,6 +34,7 @@ TESTS = (
     ("@mstr (trapl atch '' 'n' (trapl dtch 'smth' new))  mstr n Z", 'Z'),
     ("@ 'x' trapl.int  @ 'x' x.inc  @ 'x' x.inc.inc  x", 3),
     ("x = 'abc'  x = 'zte'  x", 'zte'),
+    ("f = (trapl func x (trapl code 'hello' cat x rev))  f 'me'", 'emolleh'),
 )
 
 if __name__ == '__main__':
