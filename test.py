@@ -35,6 +35,8 @@ TESTS = (
     ("@ 'x' trapl.int  @ 'x' x.inc  @ 'x' x.inc.inc  x", 3),
     ("x = 'abc'  x = 'zte'  x", 'zte'),
     ("f = (trapl func x (trapl code 'hello' cat x rev))  f 'me'", 'emolleh'),
+    ("f = {x|'hello' cat x rev}  f 'me'", 'emolleh'),
+    ("f = {x|x=x trapl.eval (trapl code {z| x cat z cat x})}  f w l", 'wlw')
 )
 
 if __name__ == '__main__':

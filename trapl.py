@@ -139,11 +139,15 @@ dots = lambda code: re.sub(r"(\w*(?:\.(?:\w*))+)", lambda m:
     ' '.join(include_str(s) for s in m.group(1).split('.')[1:]) + ' ) ', code)
 assign = lambda code: re.sub(r"(\w*)(?:\s*)=", lambda m:
     'trapl with %s ' % include_str(m.group(1)), code)
+func_l = lambda code: re.sub(r"\B{(?:(?:\s*)(\w+)(?:\s*))+\|",
+    ' ( trapl func \\1 ( trapl code ', code)
+func_r = lambda code: code.replace('}', ' ) ) ')
 
 def syntax_rich(code):
     code = quotes(code)
     code = dots(code)
     code = assign(code)
+    code = func_l(func_r(code))
     for o, s in {'(': ' ( ', ')': ' ) ', '@': 'trapl with '}.items():
         code = code.replace(o, s)
     return code
