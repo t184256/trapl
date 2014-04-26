@@ -25,6 +25,7 @@ TESTS = (
     ('trapl true not or z', 'z'),
     ('hello eq hello or z', True),
     ('3 eq 4 not and also', 'also'),
+    ('trapl ign x', 'x'),
     # Rich syntax examples
     ('@hello (trapl ext hello shorten hi)  hello shorten', 'hi'),
     ('@x abc  @x 100500  @x xoth  x', 'abc'),

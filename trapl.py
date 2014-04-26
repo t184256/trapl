@@ -2,101 +2,100 @@
 # Toy Reduced Awful Programming Language
 # Copyright (c) 2014 Alexander Sosedkin <monk@unboiled.info>, see LICENSE file
 
-import re, base64
+# This program is an interpreter for a toy language with simple syntax rules:
+# (try reading the examples in test.py, most are pretty self-explanatory!)
+# 1) Braces define priority
+# 2) Applications chains: 'obj1 obj2 obj3' means obj3 gets applied to
+#    the result of obj2 to obj1 application and so on
+# Application usually means a dictionary lookup in first object,
+# but there also are other important effects of application (see trapl_apply):
+# 1) if first is a 'callable' it calls a wrapped python functions of 1 argument
+# 2) if second is a 'method' it gets applied to the first object
+# Additional syntax is supported with source-to-source transformations.
+# The interpreter reuses python stack and more, remaining relatively compact.
+# For even simpler, but less capable versions, please refer to the previous
+# versions in the VCS (first version was very simple and < 87 lines long!).
 
-class TRAPLError(RuntimeError): pass
+class TRAPLError(RuntimeError): pass # a base exception for interpreter errors
 
-class mydict(dict):
+class mydict(dict): # a lousily implemented immutable dictionary
     def __getattr__(self, k):    return self[k]
     def __setitem__(self, k, v): raise TRAPLError('__setitem__ disabled')
     def __setattr__(self, k, v): raise TRAPLError('__setattr__ disabled')
     def clear(self, *a, **kwar): raise TRAPLError('clear disabled')
     def update(self, *a, **kwa): raise TRAPLError('update disabled')
     def setdefault(s, *a, **kw): raise TRAPLError('setdefault disabled')
-    def __call__(self, *a, **k):
-        n = self.copy()
-        n.update(dict(*a, **k))
-        return mydict(n)
+    def __call__(self, *a, **k): # this is how you extend mydict:
+        n = self.copy()          # mydict({'a': 'b'})({'c': 'd'})(x='y')
+        n.update(dict(*a, **k))  # results in a new mydict equivalent to
+        return mydict(n)         # mydict({'a': 'b', 'c': 'd', 'x': 'y'})
 
-BASE_OBJ = mydict()
-TRAPL = BASE_OBJ({
-    'obj': BASE_OBJ,
-    'false': BASE_OBJ({
-        '_val_': False,
-        'not': BASE_OBJ(_meth_=lambda b: b(_val_=(not b._val_))),
-        'or': BASE_OBJ(_meth_=lambda b: BASE_OBJ(_call_=lambda arg:
+OBJ = mydict() # create an immutable object, the base for all future objects
+# methods and callables are objects with special fields (see trapl_apply)
+METH = lambda body, **kwa: OBJ(_meth_=body, **kwa) # method and callables are
+CALL = lambda body, **kwa: OBJ(_call_=body, **kwa) # created like this
+# this is how you create a method of obj a that takes an additional parameter:
+EQ = METH(lambda a: CALL(lambda b: # this means the method returns a callable
+    TRAPL['true'] if a == b else TRAPL['false'] # which then returns this
+))
+TRAPL = OBJ({ # let's define the standard library, accessible later as 'trapl'
+    'obj': OBJ, # provide a means of accessing the original, blank object
+    'false': OBJ({ # an instance of a boolean value false
+        '_val_': False, # put a python-object value in _val_
+        'not': METH(lambda b: b(_val_=(not b._val_))), # and several methods
+        # understanding how they work remains as an exercise
+        'or': METH(lambda b: CALL(lambda arg:
             arg if not b._val_ else b # this way 'false or 2' is 2
         )),
-        'and': BASE_OBJ(_meth_=lambda b: BASE_OBJ(_call_=lambda arg:
+        'and': METH(lambda b: CALL(lambda arg:
             arg if b._val_ else b # this way 'true and 2' is 2
         )),
-        'eq': BASE_OBJ(_meth_=lambda a: BASE_OBJ(_call_=lambda b:
-            TRAPL['true'] if a == b else TRAPL['false']
-        ))
+        'eq': EQ, # this is the example universal method from the above
     }),
-    'int': BASE_OBJ({
+    'int': OBJ({
         '_val_': 0,
-        'new': BASE_OBJ(_meth_=lambda i: BASE_OBJ(_call_=lambda s:
-            i(_val_=int(s._val_))
-        )),
-        'neg': BASE_OBJ(_meth_=lambda i: i(_val_=-i._val_)),
-        'inc': BASE_OBJ(_meth_=lambda i: i(_val_=(i._val_ + 1))),
-        'dec': BASE_OBJ(_meth_=lambda i: i(_val_=(i._val_ - 1))),
-        'add': BASE_OBJ(_meth_=lambda a: BASE_OBJ(_call_=lambda b:
-            a(_val_=a._val_ + b._val_)
-        )),
-        'str': BASE_OBJ(_meth_=lambda a: TRAPL['str'](_val_=str(a._val_))),
-        'eq': BASE_OBJ(_meth_=lambda a: BASE_OBJ(_call_=lambda b:
-            TRAPL['true'] if a == b else TRAPL['false']
-        ))
+        'new': METH(lambda i: CALL(lambda s: i(_val_=int(s._val_)))),
+        'neg': METH(lambda i: i(_val_=-i._val_)),
+        'inc': METH(lambda i: i(_val_=(i._val_ + 1))),
+        'dec': METH(lambda i: i(_val_=(i._val_ - 1))),
+        'add': METH(lambda a: CALL(lambda b: a(_val_=a._val_ + b._val_))),
+        'str': METH(lambda a: TRAPL['str'](_val_=str(a._val_))),
+        'eq': EQ,
     }),
-    'str': BASE_OBJ({
+    'str': OBJ({
         '_val_': '',
-        'new': BASE_OBJ(_meth_=lambda s: BASE_OBJ(_call_=lambda n:
-            s(_val_=n._val_),
-        )),
-        'cat': BASE_OBJ(_meth_=lambda s: BASE_OBJ(_call_=lambda n:
-            s(_val_=(s._val_ + n._val_))
-        )),
-        'len': BASE_OBJ(_meth_=lambda s: TRAPL['int'](_val_=len(s._val_))),
-        'rev': BASE_OBJ(_meth_=lambda s: s(_val_=s._val_[::-1])),
-        'dec': BASE_OBJ(_meth_=lambda s: BASE_OBJ(_call_=lambda e:
-            s(_val_=decode_str(e._val_))
-        )),
-        'eq': BASE_OBJ(_meth_=lambda a: BASE_OBJ(_call_=lambda b:
-            TRAPL['true'] if a == b else TRAPL['false']
-        ))
+        'new': METH(lambda s: CALL(lambda n: s(_val_=n._val_))),
+        'cat': METH(lambda s: CALL(lambda n: s(_val_=(s._val_ + n._val_)))),
+        'len': METH(lambda s: TRAPL['int'](_val_=len(s._val_))),
+        'rev': METH(lambda s: s(_val_=s._val_[::-1])),
+        'dec': METH(lambda s: CALL(lambda e: s(_val_=decode_str(e._val_)))),
+        'eq': EQ,
     }),
-    'ign': BASE_OBJ(_call_=lambda x: x),
-    'skip': BASE_OBJ(_call_=lambda x: BASE_OBJ(_call_=lambda y: x)),
-    'ext': BASE_OBJ(_call_=lambda o: BASE_OBJ(_call_=lambda name:
-            BASE_OBJ(_call_=lambda ext: o({name._val_: ext})
-    ))),
-    'code': BASE_OBJ(_magic_='code'),
-    'eval': BASE_OBJ(_call_=lambda code: BASE_OBJ(
-        _magic_='eval', _magic_code_=code,
-    )),
-    'with': BASE_OBJ(_call_=lambda name: BASE_OBJ(_call_=lambda val: BASE_OBJ(
-        _magic_='with', _magic_name_=name._val_, _magic_value_=val,
-    ))),
-    'func': BASE_OBJ(_call_=lambda arg_name: BASE_OBJ(_call_=lambda code:
-        BASE_OBJ(
-            code=code,
-            _call_=lambda arg_val: BASE_OBJ(
+    'ign': CALL(lambda x: x), # (trapl ign) x y -> y
+    'ext': CALL(lambda o: CALL(lambda n: CALL(lambda w: o({n._val_: w})))),
+    'code': OBJ(_magic_='code'), # objects with _magic_ are special
+    'eval': CALL(lambda code: OBJ(_magic_='eval', _magic_code_=code)),
+    'with': CALL(lambda name: CALL(lambda val:
+        OBJ(_magic_='with', _magic_name_=name._val_, _magic_value_=val)
+    )), # injects {name._val_: val} in current context, see trapl_eval
+    'func': CALL(lambda arg_name: CALL(lambda code:
+        CALL(lambda arg_val: # returns what 
+            OBJ(
                 _magic_='eval', _magic_code_=code,
                 _magic_context_={arg_name._val_: arg_val}
-    )))),
-    'atch': BASE_OBJ(_call_=lambda o: BASE_OBJ(_call_=lambda name:
-        BASE_OBJ(_call_=lambda call:
-            o({name._val_: BASE_OBJ(_meth_=call._call_)})
-    ))),
-    'dtch': BASE_OBJ(_call_=lambda o: BASE_OBJ(_call_=lambda name:
-        BASE_OBJ(_call_=o[name._val_]._meth_)
-    )),
+            ), code=code
+        ) # Given an argument name and a piece of code created with trapl code
+    )), # returns a callable will evaluate code with {arg_name._val_: arg_val}
+    'atch': CALL(lambda o: CALL(lambda name: CALL(lambda call:
+            o({name._val_: METH(call._call_)})
+    ))), # Attaches a callable call to an object o as amethod with name name
+    'dtch': CALL(lambda o: CALL(lambda name:
+        CALL(o[name._val_]._meth_)
+    )), # Returns a method detached from an object and turned into a callable
 })
-TRAPL = TRAPL({'true': TRAPL['false'](_val_=True)})
+TRAPL = TRAPL({'true': TRAPL['false'](_val_=True)}) # add true reusing false
 
-def parse(tokens):
+def parse(tokens): # turns 'a ( b ( c ) d )' into ['a', ['b', ['c'], 'd']]
     if isinstance(tokens, str): tokens = tokens.split()
     tree = []
     while tokens:
@@ -106,50 +105,51 @@ def parse(tokens):
         else: tree.append(t)
     return tree
 
+# Does the reverse job
 flatten = lambda t: \
     ' '.join('( ' + flatten(a) + ' )' if isinstance(a, list) else a for a in t)
 
-def trapl_apply(to, what):
-    if '_call_' in to: return to._call_(what)
+def trapl_apply(to, what): # Handles how one object gets applied to another
+    if '_call_' in to: return to._call_(what) # appying to a callable calls it
     if not '_val_' in what: raise TRAPLError('No _val_ in %s' % what)
-    if what._val_ in to:
-        x = to[what._val_]
+    if what._val_ in to: # if it's a string mathcing one of the object's keys
+        x = to[what._val_] # retrieve it from the object
     # TODO LATER: Implement this functionality in trapl, remove from here
-    elif '_get_' in to:
+    elif '_get_' in to: # otherwise call a special catchall callable if present
         x = trapl_apply(trapl_apply(to, TRAPL['str'](_val_='_get_')), what)
     else:
         raise TRAPLError('No %s in %s' % (what._val_, to.keys()))
-    if '_meth_' in x: return x._meth_(to)
+    if '_meth_' in x: return x._meth_(to) # if the result is a method, apply it
+    # Note: to get a method from the object without appying it, see dtach
     return x
 
-def _trapl_eval(tree, context=None):
+def _trapl_eval(tree, context=None, default_object=OBJ): # evaluate a tree
     context = {'trapl': TRAPL} if context is None else context.copy()
     curr = None
     while tree:
         next = tree.pop(0)
         if isinstance(next, list): next = _trapl_eval(next, context)
-        if isinstance(next, str):
+        if isinstance(next, str): # Autocast unknown literals to strings
             next = context.get(next, TRAPL['str'](_val_=next))
         curr = trapl_apply(curr, next) if not curr is None else next
-        if '_magic_' in curr:
-            if curr._magic_ == 'with':
+        if '_magic_' in curr: # Handle special messages to the interpreter
+            if curr._magic_ == 'with': # inject a value in current context
                 context[curr._magic_name_] = curr._magic_value_
                 curr = TRAPL['ign']
-            elif curr._magic_ == 'eval':
+            elif curr._magic_ == 'eval': # evaluate a string
                 utree = parse(curr._magic_code_._val_)
                 ctx = context
                 if '_magic_context_' in curr: ctx.update(curr._magic_context_)
                 curr = _trapl_eval(utree, ctx)
-            elif curr._magic_ == 'code':
+            elif curr._magic_ == 'code': # create a string from remaining code
                 # TODO: fall out of current brace if empty (allows trapl.code)
-                to_the_end, tree = tree, []
-                curr = TRAPL['str'](_val_=flatten(to_the_end))
-    return curr or BASE_OBJ
+                remaining_code, tree = tree, [] # and stop interpreting it
+                curr = TRAPL['str'](_val_=flatten(remaining_code))
+    return curr or default_object
 
-syntax_plain = lambda code: code
-def trapl_eval(code, syntax=syntax_plain):
-    return _trapl_eval(parse(syntax(code)))['_val_']
-
+syntax_plain = lambda code: code # source code transformations may be used
+# Let's define some code transformations to make syntax more pleasant
+import re, base64
 encode_str = lambda s: 'ENC' + base64.b32encode(s).replace('=', '0')
 decode_str = lambda s: base64.b32decode(s[3:].replace('0', '='))
 include_str = lambda s: ' ( trapl str dec %s ) ' % encode_str(s)
@@ -175,17 +175,23 @@ def _curly_func(tree):
             for a in args[::-1]: tree = funcize(a, tree)
     return [_curly_func(t) for t in tree]
 
-def syntax_rich(code):
-    code = quotes(code)
-    code = curly_func(code)
-    code = quotes(code) # Hack needed because funcise relies on quoting
-    code = dots(code)
-    code = assign(code)
+def syntax_rich(code): # apply lots of source-to-source transformations
+    # convert 'a' into ( trapl string dec ENCSFD ) to protect it
+    code = quotes(code) # from futher damage, respects escaping
+    # convert {a b|b a} -> (trapl func a ( trapl code ( trapl func b (
+    code = curly_func(code) # trapl code b a ) ) ) )
+    code = quotes(code) # hack needed because funcise relies on quoting
+    code = dots(code) # convert t = trapl.true -> t = (trapl true)
+    code = assign(code) # convert t=(trapl true) -> trapl with t (trapl true)
+    # puts spaces around braces so they become separate tokens
     for o, s in {'(': ' ( ', ')': ' ) ', '@': 'trapl with '}.items():
-        code = code.replace(o, s)
+        code = code.replace(o, s) # also handles a tricky-to-use shortcut
     return code
 
+def trapl_eval(code, syntax=syntax_plain): # evaluate a string
+    return _trapl_eval(parse(syntax(code)))['_val_']
+
 if __name__ == '__main__':
-    import sys
+    import sys # evaluates a list of files or stdin contents
     for f in [file(fname) for fname in sys.argv[1:]] or [sys.stdin]:
         print trapl_eval(f.read(), syntax=syntax_rich)
