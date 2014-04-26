@@ -213,8 +213,8 @@ def syntax_rich(code): # apply lots of source-to-source transformations
         code = code.replace(o, s) # also handles a tricky-to-use shortcut
     return code
 
-def trapl_eval(code, syntax=syntax_plain): # evaluate a string
-    return _trapl_eval(parse(syntax(code)))['_val_']
+def trapl_eval(code, syntax=None): # evaluate a string
+    return _trapl_eval(parse((syntax or syntax_plain)(code)))['_val_']
 
 if __name__ == '__main__':
     import sys # evaluates a list of files or stdin contents

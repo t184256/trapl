@@ -80,7 +80,5 @@ TESTS_RICH_SYNTAX = (
 )
 
 if __name__ == '__main__':
-    for code, result in TESTS_CORE_SYNTAX:
-        assert trapl_eval(code) == result
-    for code, result in TESTS_RICH_SYNTAX:
-        assert trapl_eval(code, syntax=syntax_rich) == result
+    for t, s in ((TESTS_CORE_SYNTAX, None), (TESTS_RICH_SYNTAX, syntax_rich)):
+        for code, result in t: assert trapl_eval(code, syntax=s) == result
