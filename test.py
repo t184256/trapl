@@ -19,6 +19,12 @@ TESTS = (
     ('trapl with s abc  trapl with s Z  trapl eval ( trapl code s )', 'abc'),
     ('trapl with X s  trapl with X abc  trapl eval ( trapl code s )', 'abc'),
     ('trapl with hello ( trapl ext hello shorten hi )  hello shorten', 'hi'),
+    ('trapl false not', True),
+    ('trapl false not and z', 'z'),
+    ('trapl true not', False),
+    ('trapl true not or z', 'z'),
+    ('hello eq hello or z', True),
+    ('3 eq 4 not and also', 'also'),
     # Rich syntax examples
     ('@hello (trapl ext hello shorten hi)  hello shorten', 'hi'),
     ('@x abc  @x 100500  @x xoth  x', 'abc'),
@@ -40,6 +46,8 @@ TESTS = (
     ("f = {x z|x cat z cat x}  f who let", 'wholetwho'),
     ("backapply = {x z|z x}  backapply int trapl", 0),
     ("backapply={ x z | z x }  backapply int trapl", 0),
+    ("t=trapl.true  cmp={a b|a eq b}  cmp 3 4 not and (cmp t t)", True),
+    ("t=trapl.true  neq={a b|a eq b not}  neq 3 4 and (neq t (t not))", True),
 )
 
 if __name__ == '__main__':

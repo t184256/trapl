@@ -1,4 +1,4 @@
-#!/usr/bin/python
+ #!/usr/bin/python
 # Toy Reduced Awful Programming Language
 # Copyright (c) 2014 Alexander Sosedkin <monk@unboiled.info>, see LICENSE file
 
@@ -21,6 +21,19 @@ class mydict(dict):
 BASE_OBJ = mydict()
 TRAPL = BASE_OBJ({
     'obj': BASE_OBJ,
+    'false': BASE_OBJ({
+        '_val_': False,
+        'not': BASE_OBJ(_meth_=lambda b: b(_val_=(not b._val_))),
+        'or': BASE_OBJ(_meth_=lambda b: BASE_OBJ(_call_=lambda arg:
+            arg if not b._val_ else b # this way 'false or 2' is 2
+        )),
+        'and': BASE_OBJ(_meth_=lambda b: BASE_OBJ(_call_=lambda arg:
+            arg if b._val_ else b # this way 'true and 2' is 2
+        )),
+        'eq': BASE_OBJ(_meth_=lambda a: BASE_OBJ(_call_=lambda b:
+            TRAPL['true'] if a == b else TRAPL['false']
+        ))
+    }),
     'int': BASE_OBJ({
         '_val_': 0,
         'new': BASE_OBJ(_meth_=lambda i: BASE_OBJ(_call_=lambda s:
@@ -33,6 +46,9 @@ TRAPL = BASE_OBJ({
             a(_val_=a._val_ + b._val_)
         )),
         'str': BASE_OBJ(_meth_=lambda a: TRAPL['str'](_val_=str(a._val_))),
+        'eq': BASE_OBJ(_meth_=lambda a: BASE_OBJ(_call_=lambda b:
+            TRAPL['true'] if a == b else TRAPL['false']
+        ))
     }),
     'str': BASE_OBJ({
         '_val_': '',
@@ -47,6 +63,9 @@ TRAPL = BASE_OBJ({
         'dec': BASE_OBJ(_meth_=lambda s: BASE_OBJ(_call_=lambda e:
             s(_val_=decode_str(e._val_))
         )),
+        'eq': BASE_OBJ(_meth_=lambda a: BASE_OBJ(_call_=lambda b:
+            TRAPL['true'] if a == b else TRAPL['false']
+        ))
     }),
     'ign': BASE_OBJ(_call_=lambda x: x),
     'skip': BASE_OBJ(_call_=lambda x: BASE_OBJ(_call_=lambda y: x)),
@@ -75,6 +94,7 @@ TRAPL = BASE_OBJ({
         BASE_OBJ(_call_=o[name._val_]._meth_)
     )),
 })
+TRAPL = TRAPL({'true': TRAPL['false'](_val_=True)})
 
 def parse(tokens):
     if isinstance(tokens, str): tokens = tokens.split()
