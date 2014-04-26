@@ -188,7 +188,7 @@ def _curly_func(tree):
                 tree = funcize(a, tree)
     return [_curly_func(t) for t in tree]
 
-autoint = lambda code: re.sub(r"\b([-+]?\d+)\b", lambda m:
+autoint = lambda code: re.sub(r"\b(\d+)\b", lambda m:
     ' ( trapl int new ' + include_str(m.group(1)) + ' ) ', code)
 
 def syntax_rich(code): # apply lots of source-to-source transformations
