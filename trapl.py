@@ -1,4 +1,4 @@
- #!/usr/bin/python
+#!/usr/bin/python
 # Toy Reduced Awful Programming Language
 # Copyright (c) 2014 Alexander Sosedkin <monk@unboiled.info>, see LICENSE file
 
