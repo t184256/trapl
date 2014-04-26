@@ -59,6 +59,16 @@ TESTS = (
     ("sum = {a b|a cat b}  hll = (sum hel)  hll lo", 'hello'),
     ("s={a b|a cat b} (s (s h i) (s h i))", 'hihi'),
     ("pre = 'zz'  f = {x|pre cat x}  trapl.drop 'pre' f x", 'zzx'),
+    ("bk = {x y|y x}  bk drop trapl  'bk' bk", 'bk'),
+    ("twisted = {f x y|f y x}  tst = (twisted '')  tst 'hello' cat", 'hello'),
+    ("twisted = {f x y|f y x}  post4 = {x|twisted x 4 cat}  post4 2", '24'),
+    ("t={f x y|f y x}  post={p x|t x p cat}  trapl.drop 't'  post 4 2", '24'),
+    ("""
+    t = {f x y|f y x}
+    s = {x f|x add (f neg)}
+    st = (t s)
+    st trapl.int.new.3 trapl.int.new.4
+    """, 1),
 )
 
 if __name__ == '__main__':
