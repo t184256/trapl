@@ -1,7 +1,9 @@
 #!/usr/bin/python
 # Copyright (c) 2014 Alexander Sosedkin <monk@unboiled.info>, see LICENSE file
 
-from trapl import trapl_eval, syntax_rich
+from trapl import trapl_eval, syntax_rich, TRAPLError
+
+import sys, time
 
 TESTS_CORE_SYNTAX = (
     ('Hello_world!', 'Hello_world!'),
@@ -88,5 +90,27 @@ TESTS_RICH_SYNTAX = (
 )
 
 if __name__ == '__main__':
-    for t, s in ((TESTS_CORE_SYNTAX, None), (TESTS_RICH_SYNTAX, syntax_rich)):
-        for code, result in t: assert trapl_eval(code, syntax=s) == result
+    #for t, s in ((TESTS_CORE_SYNTAX, None), (TESTS_RICH_SYNTAX, syntax_rich)):
+    #    for code, result in t: assert trapl_eval(code, syntax=s) == result
+    # The horror below is a prettier (in runtime) equivalent to the code above
+    tests = [t + (None,) for t in TESTS_CORE_SYNTAX]
+    tests += [t + (syntax_rich,) for t in TESTS_RICH_SYNTAX]
+    e, n, status, report, times = 0, len(tests), '', '', []
+    for i, (code, result, syntax) in enumerate(tests):
+        try:
+            start = time.time()
+            r = trapl_eval(code, syntax=syntax)
+            times.append((time.time() - start) * 1000)
+        except TRAPLError, ex:
+            r = ex
+        if r != result:
+            e += 1
+            rep += 'code     %s\n' % code
+            rep += 'returned %s\nand not  %s\n' % (str(r)[:70], str(result))
+        sys.stdout.write('\b' * len(status))
+        l = int(60 * float(i + 1) / n)
+        status = '.'*l + ' '*(60 - l) + ' %d/%d, %d errors' % (i + 1, n, e)
+        sys.stdout.write(status); sys.stdout.flush()
+    report = report or '%dms: avg %dms max %dms\n' % \
+            (sum(times), sum(times)/n, max(times))
+    sys.stdout.write('\n' + report)
