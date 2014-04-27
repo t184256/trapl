@@ -105,8 +105,8 @@ if __name__ == '__main__':
             r = ex
         if r != result:
             e += 1
-            rep += 'code     %s\n' % code
-            rep += 'returned %s\nand not  %s\n' % (str(r)[:70], str(result))
+            report += 'code     %s\n' % code
+            report += 'returned %s\nand not  %s\n' % (str(r)[:70], str(result))
         sys.stdout.write('\b' * len(status))
         l = int(60 * float(i + 1) / n)
         status = '.'*l + ' '*(60 - l) + ' %d/%d, %d errors' % (i + 1, n, e)
