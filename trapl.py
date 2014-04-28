@@ -197,14 +197,34 @@ def _curly_func(tree):
                 tree = funcize(a, tree)
     return [_curly_func(t) for t in tree]
 
+curly_if = lambda code: flatten(_curly_if(parse(code.replace('{', ' ( { '
+    ).replace('}', ' } ) ').replace('?', ' ? ').replace(':', ' : ')
+)))
+ifize = lambda cond, then_block, else_block: ['trapl', 'eval', ['trapl', 'if',
+    [cond], ['trapl', 'code'] + [then_block], ['trapl', 'code'] + [else_block]
+]]
+def _curly_if(tree):
+    if isinstance(tree, str): return tree
+    if len(tree) > 5:
+        if tree[0] == '{' and '?' in tree[1:-1] and tree[-1] == '}':
+            i = tree[1:-1].index('?') + 1
+            cond, inner = tree[1:i], tree[i+1:-1]
+            if ':' in inner[1:-1]:
+                j = inner[1:-1].index(':') + 1
+                then_block, else_block = inner[:j], inner[j+1:]
+                tree = ifize(cond, then_block, else_block)
+    return [_curly_if(t) for t in tree]
+
 autoint = lambda code: re.sub(r"\b(\d+)\b", lambda m:
     ' ( trapl int new ' + include_str(m.group(1)) + ' ) ', code)
 
 def syntax_rich(code): # apply lots of source-to-source transformations
     # convert 'a' into ( trapl string dec ENCSMTH ) to protect it
     code = quotes(code) # from futher damage, respects escaping
-    # convert {a b|b a} -> (trapl func a ( trapl code ( trapl func b (
     code = code.replace('(', ' ( ').replace(')', ' ) ') # HACK: deduplicate
+    # {a?b:c} -> ( trapl eval ( trapl if a
+    code = curly_if(code) # ( trapl code a ) ( trapl code b ) ) )
+    # convert {a b|b a} -> (trapl func a ( trapl code ( trapl func b (
     code = curly_func(code) # trapl code b a ) ) ) )
     code = autoint(code) # convert 3 -> ( trapl int new 3 )
     code = dots(code) # convert t = trapl.true -> t = (trapl true)
@@ -229,13 +249,7 @@ mint = (trapl.atch mint 'sub' {x y|y neg add x})
 mint = (trapl.atch mint 'lt' {x y|x ge y not})
 mint = (trapl.atch mint 'le' {x y|y ge x})
 mint = (trapl.atch mint 'gt' {x y|y ge x not})
-mod = {a d|
- trapl.eval (trapl.if (a ge d) (
-   trapl.code (a sub d) mod d
- ) (
-   trapl.code a
- ))
-}
+mod = { a d |  { a ge d  ?  (a sub d) mod d  :  a }  }
 mint = (trapl.atch mint 'mod' mod)
 trapl.ext trapl 'int' mint
 """) # NOTE: mod only works for small positive numbers
