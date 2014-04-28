@@ -5,6 +5,11 @@ from trapl import trapl_eval, syntax_rich, TRAPLError
 
 import sys, time
 
+from trapl import include_str, square_brackets
+assert square_brackets('[a b, c]') == \
+        '( ( trapl {list_} {add_} ( a b ) {add_} ( c ) ) )'.format(
+           list_=include_str('list'), add_=include_str('add'))
+
 TESTS_CORE_SYNTAX = (
     ('Hello_world!', 'Hello_world!'),
     ('Hello_world! len', 12),
@@ -101,6 +106,10 @@ TESTS_RICH_SYNTAX = (
     ("{3 eq 3?{4 eq 4?x:y}:z}", 'x'),
     ("factory = {x| { x eq 0 ?  {x|x} : {x|x inc} } } factory 0 10", 10),
     ("factory = {x| { x eq 0 ?  {x|x} : {x|x inc} } } factory 2 10", 11),
+    ("[]", tuple()),
+    ("[1, [2, [3, []]]]", (1, (2, (3, tuple())))),
+    ("l=[1, 2, 3]  [l len, [0] cat l]", (3,(0, 1, 2, 3))),
+    ('l=[1, 2,3]  [l add 3, l cat [3]]', ((1, 2, 3, 3), (1, 2, 3, 3))),
 )
 
 if __name__ == '__main__':

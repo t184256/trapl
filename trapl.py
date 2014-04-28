@@ -224,6 +224,37 @@ def _curly_if(tree):
                 tree = ifize(cond, then_block, else_block)
     return [_curly_if(t) for t in tree]
 
+def transform_code(first, last, code, separators, transformer):
+    code = code.replace(first, ' ( ' + first + ' ')
+    code = code.replace(last, ' ' + last + ' ) ')
+    for c in separators:
+        code = code.replace(c, ' ' + c + ' ')
+    tree = transform_tree(first, last, parse(code), separators, transformer)
+    return flatten(tree)
+
+def transform_tree(first, last, tree, separators, transformer):
+    if isinstance(tree, str): return tree
+    if len(tree) >= 2 and tree[0] == first and tree[-1] == last:
+        tree = transformer(tree)
+    return [transform_tree(first, last, t, separators, transformer) \
+            for t in tree]
+
+def square_brackets_transformer(tree):
+    t = ['trapl', include_str('list')]
+    tree = tree[1:-1]
+    while ',' in tree:
+        e = []
+        while tree[0] != ',':
+            e.append(tree[0])
+            tree = tree[1:]
+        tree = tree[1:]
+        t.extend((include_str('add'), e))
+    if tree: t.extend((include_str('add'), tree))
+    return [t]
+
+def square_brackets(code):
+    return transform_code('[', ']', code, [','], square_brackets_transformer)
+
 autoint = lambda code: re.sub(r"\b(\d+)\b", lambda m:
     ' ( trapl int new ' + include_str(m.group(1)) + ' ) ', code)
 
@@ -231,6 +262,8 @@ def syntax_rich(code): # apply lots of source-to-source transformations
     # convert 'a' into ( trapl string dec ENCSMTH ) to protect it
     code = quotes(code) # from futher damage, respects escaping
     code = code.replace('(', ' ( ').replace(')', ' ) ') # HACK: deduplicate
+    # [a b, c] -> ( trapl list add (a b) add (c) )
+    code = square_brackets(code)
     # {a?b:c} -> ( trapl eval ( trapl if a
     code = curly_if(code) # ( trapl code a ) ( trapl code b ) ) )
     # convert {a b|b a} -> (trapl func a ( trapl code ( trapl func b (
