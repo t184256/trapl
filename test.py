@@ -97,11 +97,14 @@ if __name__ == '__main__':
     tests = [t + (None,) for t in TESTS_CORE_SYNTAX]
     tests += [t + (syntax_rich,) for t in TESTS_RICH_SYNTAX]
     e, n, status, report, times = 0, len(tests), '', '', []
+    if len(sys.argv) > 1: repeat = int(sys.argv[1])
+    repeat = int(sys.argv[1]) if len(sys.argv) > 1 else 1
     for i, (code, result, syntax) in enumerate(tests):
         try:
             start = time.time()
-            r = trapl_eval(code, syntax=syntax)
-            times.append((time.time() - start) * 1000)
+            for j in range(repeat):
+                r = trapl_eval(code, syntax=syntax)
+            times.append((time.time() - start) * 1000 / repeat)
         except TRAPLError, ex:
             r = ex
         if r != result:
