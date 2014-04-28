@@ -218,14 +218,13 @@ def trapl_eval(code, syntax=None, unbox=True): # evaluate a string
 # Now that we have a bare language to play with,
 # let's use it to extend its standard library!
 TRAPL = trapl_eval('trapl ext trapl true ( trapl false not )', unbox=False)
-TRAPL = trapl_eval("""trapl.ext trapl 'int' (
-  trapl.atch trapl.int 'dec' {x|x neg inc neg}
-)""", syntax=syntax_rich, unbox=False)
 treval = lambda code: trapl_eval(code, syntax=syntax_rich, unbox=False) # short
 TRAPL = treval("trapl.ext trapl 'ign' {x|x}") # trapl.ign x -> x
-TRAPL = treval("""trapl.ext trapl 'int' (
-  trapl.atch trapl.int 'sub' {x y|x add (y neg)}
-)""")
+TRAPL = treval("""
+mint = (trapl.atch trapl.int 'dec' {x|x neg inc neg})
+mint = (trapl.atch mint 'sub' {x y|y neg add x})
+trapl.ext trapl 'int' mint
+""")
 
 if __name__ == '__main__':
     import sys # evaluates a list of files or stdin contents
