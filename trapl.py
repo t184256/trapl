@@ -229,14 +229,14 @@ mint = (trapl.atch mint 'sub' {x y|y neg add x})
 mint = (trapl.atch mint 'lt' {x y|x ge y not})
 mint = (trapl.atch mint 'le' {x y|y ge x})
 mint = (trapl.atch mint 'gt' {x y|y ge x not})
-mod_ = {a d|
+mod = {a d|
  trapl.eval (trapl.if (a ge d) (
-   trapl.code mod_ (a sub d) d
+   trapl.code (a sub d) mod d
  ) (
    trapl.code a
  ))
 }
-mint = (trapl.atch mint 'mod' {a d|mod_ a d})
+mint = (trapl.atch mint 'mod' mod)
 trapl.ext trapl 'int' mint
 """) # NOTE: mod only works for small positive numbers
 
