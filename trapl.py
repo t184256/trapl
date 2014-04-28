@@ -93,7 +93,6 @@ TRAPL = OBJ({ # let's define the standard library, accessible later as 'trapl'
         CALL(lambda unused_val_true: CALL(lambda val_false: val_false))
     ),
 })
-TRAPL = TRAPL({'true': TRAPL['false'](_val_=True)}) # add true reusing false
 
 def parse(tokens): # turns 'a ( b ( c ) d )' into ['a', ['b', ['c'], 'd']]
     if isinstance(tokens, str): tokens = tokens.split()
@@ -218,6 +217,7 @@ def trapl_eval(code, syntax=None, unbox=True): # evaluate a string
 
 # Now that we have a bare language to play with,
 # let's use it to extend its standard library!
+TRAPL = trapl_eval('trapl ext trapl true ( trapl false not )', unbox=False)
 TRAPL = trapl_eval("""trapl.ext trapl 'int' (
   trapl.atch trapl.int 'dec' {x|x neg inc neg}
 )""", syntax=syntax_rich, unbox=False)
