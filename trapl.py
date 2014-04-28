@@ -59,6 +59,9 @@ TRAPL = OBJ({ # let's define the standard library, accessible later as 'trapl'
         'inc': METH(lambda i: i(_val_=(i._val_ + 1))),
         'add': METH(lambda a: CALL(lambda b: a(_val_=a._val_ + b._val_))),
         'str': METH(lambda a: TRAPL['str'](_val_=str(a._val_))),
+        'ge': METH(lambda a: CALL(lambda b:
+            TRAPL['true' if a._val_ >= b._val_ else 'false']
+        )),
         'eq': EQ,
     }),
     'str': OBJ({
@@ -223,8 +226,19 @@ TRAPL = treval("trapl.ext trapl 'ign' {x|x}") # trapl.ign x -> x
 TRAPL = treval("""
 mint = (trapl.atch trapl.int 'dec' {x|x neg inc neg})
 mint = (trapl.atch mint 'sub' {x y|y neg add x})
+mint = (trapl.atch mint 'lt' {x y|x ge y not})
+mint = (trapl.atch mint 'le' {x y|y ge x})
+mint = (trapl.atch mint 'gt' {x y|y ge x not})
+mod_ = {a d|
+ trapl.eval (trapl.if (a ge d) (
+   trapl.code mod_ (a sub d) d
+ ) (
+   trapl.code a
+ ))
+}
+mint = (trapl.atch mint 'mod' {a d|mod_ a d})
 trapl.ext trapl 'int' mint
-""")
+""") # NOTE: mod only works for small positive numbers
 
 if __name__ == '__main__':
     import sys # evaluates a list of files or stdin contents

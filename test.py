@@ -88,6 +88,10 @@ TESTS_RICH_SYNTAX = (
     ))}
     f 3
     """, '321x'),
+    ("117 mod 10", 7),
+    ("(10 mod 10 eq 0) and (17 mod 2 eq 1) and (12 mod 5 eq 2)", True),
+    ("(1 lt 3) and (1 le 3) and (1 le 1) and (1 lt 1 not)", True),
+    ("(3 gt 1) and (3 ge 1) and (1 ge 1) and (1 gt 1 not)", True),
 )
 
 if __name__ == '__main__':
