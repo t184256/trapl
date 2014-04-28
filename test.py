@@ -119,6 +119,8 @@ if __name__ == '__main__':
         l = int(60 * float(i + 1) / n)
         status = '.'*l + ' '*(60 - l) + ' %d/%d, %d errors' % (i + 1, n, e)
         sys.stdout.write(status); sys.stdout.flush()
-    report = report or '%dms: avg %dms max %dms\n' % \
-            (sum(times), sum(times)/n, max(times))
+    slowest = times.index(max(times)); slowest_code = tests[slowest][0]
+    if len(slowest_code) > 45: slowest_code = slowest_code[:42] + '...'
+    report = report or '%dms: avg %dms; max %dms (%d): %s...\n' % \
+            (sum(times), sum(times)/n, max(times), slowest, slowest_code[:40])
     sys.stdout.write('\n' + report)
