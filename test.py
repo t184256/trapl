@@ -30,6 +30,10 @@ TESTS_CORE_SYNTAX = (
     ('trapl ign x', 'x'),
     ('trapl with sum ( trapl func a ( a cat 5 ) )  sum 4', 'a5'),
     ('trapl with sum ( trapl func a ( trapl code a cat 5 ) )  sum 4', '45'),
+    ('trapl list add ( trapl list len )', (0,)),
+    ('trapl list add x add y add z len', 3),
+    ('trapl list add x add y add z has y', True),
+    ('trapl list add x add y add z has t', False),
 )
 
 TESTS_RICH_SYNTAX = (

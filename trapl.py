@@ -73,6 +73,15 @@ TRAPL = OBJ({ # let's define the standard library, accessible later as 'trapl'
         'dec': METH(lambda s: CALL(lambda e: s(_val_=decode_str(e._val_)))),
         'eq': EQ,
     }),
+    'list': OBJ({
+        '_val_': tuple(),
+        'cat': METH(lambda l: CALL(lambda o: l(_val_=(l._val_ + o._val_)))),
+        'add': METH(lambda l: CALL(lambda e: l(_val_=(l._val_ + (e._val_,))))),
+        'len': METH(lambda s: TRAPL['int'](_val_=len(s._val_))),
+        'has': METH(lambda a: CALL(lambda b:
+            TRAPL['true' if b._val_ in a._val_ else 'false']
+        )),
+    }),
     'ext': CALL(lambda o: CALL(lambda n: CALL(lambda w: o({n._val_: w})))),
     'code': OBJ(_magic_='code'), # objects with _magic_ are special
     'eval': CALL(lambda code: OBJ(_magic_='eval', _magic_code_=code)),
