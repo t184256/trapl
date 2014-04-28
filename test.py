@@ -6,9 +6,9 @@ from trapl import trapl_eval, syntax_rich, TRAPLError
 import sys, time
 
 from trapl import include_str, square_brackets
+list_, add_ = include_str('list'), include_str('add')
 assert square_brackets('[a b, c]') == \
-        '( ( trapl {list_} {add_} ( a b ) {add_} ( c ) ) )'.format(
-           list_=include_str('list'), add_=include_str('add'))
+        '( ( trapl %s %s ( a b ) %s ( c ) ) )' % (list_, add_, add_)
 
 TESTS_CORE_SYNTAX = (
     ('Hello_world!', 'Hello_world!'),
