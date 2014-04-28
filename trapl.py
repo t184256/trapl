@@ -75,12 +75,10 @@ TRAPL = OBJ({ # let's define the standard library, accessible later as 'trapl'
     }),
     'list': OBJ({
         '_val_': tuple(),
+        'add': METH(lambda l: CALL(lambda e: l(_val_=(l._val_ + (e,))))),
         'cat': METH(lambda l: CALL(lambda o: l(_val_=(l._val_ + o._val_)))),
-        'add': METH(lambda l: CALL(lambda e: l(_val_=(l._val_ + (e._val_,))))),
+        'get': METH(lambda l: CALL(lambda i: l._val_[i._val_])),
         'len': METH(lambda s: TRAPL['int'](_val_=len(s._val_))),
-        'has': METH(lambda a: CALL(lambda b:
-            TRAPL['true' if b._val_ in a._val_ else 'false']
-        )),
     }),
     'ext': CALL(lambda o: CALL(lambda n: CALL(lambda w: o({n._val_: w})))),
     'code': OBJ(_magic_='code'), # objects with _magic_ are special
@@ -104,6 +102,16 @@ TRAPL = OBJ({ # let's define the standard library, accessible later as 'trapl'
         if cond._val_ == True else
         CALL(lambda unused_val_true: CALL(lambda val_false: val_false))
     ),
+    'reduce': CALL(lambda acc_name: CALL(lambda acc_initial:
+        CALL(lambda index_name: CALL(lambda times: CALL(lambda code:
+            OBJ(_magic_='eval', _magic_code_=code,
+                _magic_accumulator_name_=acc_name,
+                _magic_accumulator_initial_=acc_initial,
+                _magic_arg_name_=index_name,
+                _magic_times_=times,
+            ),
+        )))
+    )),
 })
 
 def parse(tokens): # turns 'a ( b ( c ) d )' into ['a', ['b', ['c'], 'd']]
@@ -159,7 +167,16 @@ def _trapl_eval(tree, context=None, default_object=OBJ): # evaluate a tree
                     ctx.update(curr._magic_definition_context_)
                 if '_magic_arg_val_' in curr:
                     ctx[curr._magic_arg_name_._val_] = curr._magic_arg_val_
-                curr = _trapl_eval(utree, ctx)
+                if '_magic_times_' in curr: # loops without recursion
+                    a = curr._magic_accumulator_initial_
+                    for k in range(curr._magic_times_._val_):
+                        k_boxed = TRAPL['int'](_val_=k)
+                        ctx[curr._magic_accumulator_name_._val_] = a
+                        ctx[curr._magic_arg_name_._val_] = k_boxed
+                        a = _trapl_eval(utree, ctx.copy())
+                    curr = a
+                else:
+                    curr = _trapl_eval(utree, ctx)
             elif curr._magic_ == 'func': # create a function (closure)
                 ctx, arg_name = context.copy(), curr._magic_arg_name_
                 code = curr._magic_code_
@@ -276,9 +293,13 @@ def syntax_rich(code): # apply lots of source-to-source transformations
         code = code.replace(o, s) # also handles a tricky-to-use shortcut
     return code
 
+def _unbox(r):
+    if '_val_' in r: r = r._val_
+    return r if not isinstance(r, tuple) else tuple(_unbox(e) for e in r)
+
 def trapl_eval(code, syntax=None, unbox=True): # evaluate a string
     r = _trapl_eval(parse((syntax or syntax_plain)(code)))
-    return r._val_ if unbox else r
+    return _unbox(r) if unbox else r
 
 # Now that we have a bare language to play with,
 # let's use it to extend its standard library!
@@ -291,10 +312,27 @@ mint = (trapl.atch mint 'sub' {x y|y neg add x})
 mint = (trapl.atch mint 'lt' {x y|x ge y not})
 mint = (trapl.atch mint 'le' {x y|y ge x})
 mint = (trapl.atch mint 'gt' {x y|y ge x not})
-mod = { a d |  { a ge d  ?  (a sub d) mod d  :  a }  }
-mint = (trapl.atch mint 'mod' mod)
-trapl.ext trapl 'int' mint
+mint = (trapl.atch mint 'mod' { a d |  { a ge d  ?  (a sub d) mod d  :  a } })
+trapl = (trapl.ext trapl 'int' mint)
+mlist = (trapl.atch trapl.list 'empty' {l|l len eq 0})
+mlist = (trapl.atch mlist 'map' { l f |
+ trapl.reduce 'a' [] 'i' (l len) (trapl.code a add (f (l get i)))
+})
+mlist = (trapl.atch mlist 'has' { l e |
+ trapl.reduce 'a' trapl.false 'i' (l len) (trapl.code a or (e eq (l get i)))
+})
+mlist = (trapl.atch mlist 'filter' { l f |
+ trapl.reduce 'a' [] 'i' (l len)
+  (trapl.code  e = (l get i)  {f e ? a add e : a})
+})
+trapl.ext trapl 'list' mlist
 """) # NOTE: mod only works for small positive numbers
+TRAPL = treval("""
+mint = (trapl.atch trapl.int 'to' { f t |
+ trapl.reduce 'a' [] 'i' (t sub f) (trapl.code a add (i add f))
+})
+trapl.ext trapl 'int' mint
+""")
 
 if __name__ == '__main__':
     import sys # evaluates a list of files or stdin contents
