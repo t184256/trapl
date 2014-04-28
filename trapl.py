@@ -57,7 +57,6 @@ TRAPL = OBJ({ # let's define the standard library, accessible later as 'trapl'
         'new': METH(lambda i: CALL(lambda s: i(_val_=int(s._val_)))),
         'neg': METH(lambda i: i(_val_=-i._val_)),
         'inc': METH(lambda i: i(_val_=(i._val_ + 1))),
-        'dec': METH(lambda i: i(_val_=(i._val_ - 1))),
         'add': METH(lambda a: CALL(lambda b: a(_val_=a._val_ + b._val_))),
         'str': METH(lambda a: TRAPL['str'](_val_=str(a._val_))),
         'eq': EQ,
@@ -71,7 +70,6 @@ TRAPL = OBJ({ # let's define the standard library, accessible later as 'trapl'
         'dec': METH(lambda s: CALL(lambda e: s(_val_=decode_str(e._val_)))),
         'eq': EQ,
     }),
-    'ign': CALL(lambda x: x), # (trapl ign) x y -> y
     'ext': CALL(lambda o: CALL(lambda n: CALL(lambda w: o({n._val_: w})))),
     'code': OBJ(_magic_='code'), # objects with _magic_ are special
     'eval': CALL(lambda code: OBJ(_magic_='eval', _magic_code_=code)),
@@ -214,8 +212,20 @@ def syntax_rich(code): # apply lots of source-to-source transformations
         code = code.replace(o, s) # also handles a tricky-to-use shortcut
     return code
 
-def trapl_eval(code, syntax=None): # evaluate a string
-    return _trapl_eval(parse((syntax or syntax_plain)(code)))['_val_']
+def trapl_eval(code, syntax=None, unbox=True): # evaluate a string
+    r = _trapl_eval(parse((syntax or syntax_plain)(code)))
+    return r._val_ if unbox else r
+
+# Now that we have a bare language to play with,
+# let's use it to extend its standard library!
+TRAPL = trapl_eval("""trapl.ext trapl 'int' (
+  trapl.atch trapl.int 'dec' {x|x neg inc neg}
+)""", syntax=syntax_rich, unbox=False)
+treval = lambda code: trapl_eval(code, syntax=syntax_rich, unbox=False) # short
+TRAPL = treval("trapl.ext trapl 'ign' {x|x}") # trapl.ign x -> x
+TRAPL = treval("""trapl.ext trapl 'int' (
+  trapl.atch trapl.int 'sub' {x y|x add (y neg)}
+)""")
 
 if __name__ == '__main__':
     import sys # evaluates a list of files or stdin contents

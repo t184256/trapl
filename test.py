@@ -33,9 +33,10 @@ TESTS_CORE_SYNTAX = (
 )
 
 TESTS_RICH_SYNTAX = (
+    ("'Hello world!'", 'Hello world!'),
+    ("3 sub 5", -2),
     ("@hello (trapl ext hello shorten hi)  hello shorten", 'hi'),
     ("@x abc  @x 100500  @x xoth  x", 'abc'),
-    ("'Hello world!'", 'Hello world!'),
     ("trapl 'int' 'new' '4' 'inc' 'inc'", 6),
     (r"'\'Hello \\ \' world!\'\\'", "'Hello \\ ' world!'\\"),
     ("@s abc  @s Z  trapl eval ( trapl code s )", 'abc'),
