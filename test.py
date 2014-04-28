@@ -116,6 +116,12 @@ TESTS_RICH_SYNTAX = (
     ("(1 to 5) cat (8 to 9)", (1, 2, 3, 4, 8)),
     ("(1 to 5) map {x|x add x}", (2, 4, 6, 8)),
     ("(1 to 103) filter {x|x ge 100}", (100, 101, 102)),
+    ("l = (1 to 4)  [l:a|a add a]", (2, 4, 6)),
+    ("[(1 to 6) : a ? a gt 3 | a add a]", (8, 10)),
+    ("l = (0 to 5)  [ a inc | a : l ]", (1, 2, 3, 4, 5)),
+    ("l = (0 to 5)  [ l : a | a inc ]", (1, 2, 3, 4, 5)),
+    ("l = (1 to 5)  [ a inc | a ge 3 ? a : l ]", (4, 5)),
+    ("l = (1 to 5)  [ l : a ? a ge 3 | a inc ]", (4, 5)),
 )
 
 if __name__ == '__main__':

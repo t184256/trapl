@@ -75,6 +75,7 @@ TRAPL = OBJ({ # let's define the standard library, accessible later as 'trapl'
     }),
     'list': OBJ({
         '_val_': tuple(),
+        'new': METH(lambda l: l(_val_=tuple())),
         'add': METH(lambda l: CALL(lambda e: l(_val_=(l._val_ + (e,))))),
         'cat': METH(lambda l: CALL(lambda o: l(_val_=(l._val_ + o._val_)))),
         'get': METH(lambda l: CALL(lambda i: l._val_[i._val_])),
@@ -257,8 +258,24 @@ def transform_tree(first, last, tree, separators, transformer):
             for t in tree]
 
 def square_brackets_transformer(tree):
-    t = ['trapl', include_str('list')]
     tree = tree[1:-1]
+    if '|' in tree: # [l:a?c|a inc] -> ( (l filter {a|c}) map {a|a inc} )
+        i = tree.index('|'); left, right = tree[:i], tree[i+1:]
+        flip = False
+        if ':' in right: right, left, flip = left, right, True #[a|c?a:l]
+        cond = None
+        if '?' in left:
+            i = left.index('?'); left, cond = left[:i], left[i+1:]
+            if flip: left, cond = cond, left
+        i = left.index(':'); lst, var = left[:i][0], left[i+1:][0]
+        if flip: var, lst = lst, var
+        t = [lst]
+        # HACK: cheat
+        if cond: t += ['filter', ['{', var, '|', cond, '}']]
+        t += ['map', ['{', var, '|', right, '}']]
+        return [t]
+
+    t = ['trapl', include_str('list')]
     while ',' in tree:
         e = []
         while tree[0] != ',':
@@ -270,7 +287,7 @@ def square_brackets_transformer(tree):
     return [t]
 
 def square_brackets(code):
-    return transform_code('[', ']', code, [','], square_brackets_transformer)
+    return transform_code('[', ']', code, ',:?|', square_brackets_transformer)
 
 autoint = lambda code: re.sub(r"\b(\d+)\b", lambda m:
     ' ( trapl int new ' + include_str(m.group(1)) + ' ) ', code)
@@ -280,6 +297,8 @@ def syntax_rich(code): # apply lots of source-to-source transformations
     code = quotes(code) # from futher damage, respects escaping
     code = code.replace('(', ' ( ').replace(')', ' ) ') # HACK: deduplicate
     # [a b, c] -> ( trapl list add (a b) add (c) )
+    # [ a : l | a inc ] -> ( (l) map { a | a inc } )
+    # [ a : l ? a gt 4 | a inc ] -> ( (l filter {a|a gt 4}) map {a|a inc} )
     code = square_brackets(code)
     # {a?b:c} -> ( trapl eval ( trapl if a
     code = curly_if(code) # ( trapl code a ) ( trapl code b ) ) )
@@ -316,13 +335,13 @@ mint = (trapl.atch mint 'mod' { a d |  { a ge d  ?  (a sub d) mod d  :  a } })
 trapl = (trapl.ext trapl 'int' mint)
 mlist = (trapl.atch trapl.list 'empty' {l|l len eq 0})
 mlist = (trapl.atch mlist 'map' { l f |
- trapl.reduce 'a' [] 'i' (l len) (trapl.code a add (f (l get i)))
+ trapl.reduce 'a' (l new) 'i' (l len) (trapl.code a add (f (l get i)))
 })
 mlist = (trapl.atch mlist 'has' { l e |
  trapl.reduce 'a' trapl.false 'i' (l len) (trapl.code a or (e eq (l get i)))
 })
 mlist = (trapl.atch mlist 'filter' { l f |
- trapl.reduce 'a' [] 'i' (l len)
+ trapl.reduce 'a' (l new) 'i' (l len)
   (trapl.code  e = (l get i)  {f e ? a add e : a})
 })
 trapl.ext trapl 'list' mlist
